@@ -1,0 +1,9 @@
+[package]
+name = "js_parser"
+edition = '2018'
+version = "0.1.0"
+authors = ["Peter Hrvola <peter.hrvola@hotmail.com>"]
+
+[dependencies]
+nom = "4.0.0"
+unescape = "0.1.0"
