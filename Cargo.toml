@@ -7,3 +7,6 @@ authors = ["Peter Hrvola <peter.hrvola@hotmail.com>"]
 [dependencies]
 nom = "4.0.0"
 unescape = "0.1.0"
+
+[dev-dependencies]
+pretty_assertions = "0.5.1"

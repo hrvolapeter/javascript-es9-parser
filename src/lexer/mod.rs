@@ -30,7 +30,12 @@ pub struct Lexer;
 impl Lexer {
     pub fn lex_tokens(s: &str) -> IResult<CompleteStr, Vec<Token>> {
         let mut tokens = lex_tokens(CompleteStr(s))?;
-        tokens.1 = tokens.1.into_iter().filter(|t| t != &Token::NOP).collect();
+        // Space can be discarded by ECMASript standard
+        tokens.1 = tokens
+            .1
+            .into_iter()
+            .filter(|t| t != &Token::NOP && t != &Token::SP)
+            .collect();
         Ok((tokens.0, [tokens.1, vec![Token::EOF]].concat()))
     }
 }

@@ -1,5 +1,5 @@
 use crate::lexer::token;
-use crate::lexer::token::{Number, Token, UnicodeEscapeSequence};
+use crate::lexer::token::{HexDigit, HexDigits, Number, Token};
 use crate::lexer::ParseResult;
 use nom::types::*;
 use nom::*;
@@ -25,7 +25,6 @@ should!(
         Token::TAB,
         Token::VT,
         Token::FF,
-        Token::SP,
         Token::NBSP,
         Token::ZWNBSP,
         Token::EOF
@@ -39,7 +38,7 @@ should!(whitespace_vr, "\u{000B}", vec![Token::VT, Token::EOF]);
 named_token_unicode!(FF, 0x000C, Token::FF);
 should!(whitespace_ff, "\u{000C}", vec![Token::FF, Token::EOF]);
 named_token_unicode!(SP, 0x0020, Token::SP);
-should!(whitespace_sp, " ", vec![Token::SP, Token::EOF]);
+should!(whitespace_sp, " ", vec![Token::EOF]);
 named_token_unicode!(NBSP, 0x00A0, Token::NBSP);
 should!(whitespace_nbsp, "\u{00A0}", vec![Token::NBSP, Token::EOF]);
 named_token_unicode!(ZWNBSP, 0xFEFF, Token::ZWNBSP);
@@ -80,12 +79,12 @@ named_js!(Comment: MultiLineComment | SingleLineComment);
 should!(
     comment_multiline_singleline,
     "/* aa */\n // adwada",
-    vec![Token::LF, Token::SP, Token::EOF]
+    vec![Token::LF, Token::EOF]
 );
 should!(
     comment_multiline_singleline_multiline,
     "/* aa */\n // adwada \n /* aa */",
-    vec![Token::LF, Token::SP, Token::LF, Token::SP, Token::EOF]
+    vec![Token::LF, Token::LF, Token::EOF]
 );
 
 named_js!(
@@ -140,22 +139,18 @@ named_js!(CommonToken: IdentifierName | Punctuator | NumericLiteral | StringLite
 #[inline]
 fn IdentifierName(input: CompleteStr) -> ParseResult {
     let identifierStart = IdentifierStart(input)?;
-    let mut identifierRest = many0!(identifierStart.0, IdentifierPart)?;
-    let mut unicodeSeq = vec![identifierStart.1];
-    unicodeSeq.append(&mut identifierRest.1);
-    let unicodeSeq = unicodeSeq
-        .into_iter()
-        .filter(|t| t != &UnicodeEscapeSequence::NOP)
-        .collect();
-    Ok((identifierRest.0, Token::IdentifierName(unicodeSeq)))
+    let identifierRest = many0!(identifierStart.0, IdentifierPart)?;
+    let len = input.len() - identifierRest.0.len();
+    Ok((
+        identifierRest.0,
+        Token::IdentifierName(String::from(&(*input)[..len])),
+    ))
 }
 should!(
     identifiername_1,
     "\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -163,10 +158,7 @@ should!(
     identifiername_2,
     "\\u{1111Aa}\\u{12}",
     vec![
-        Token::IdentifierName(vec![
-            UnicodeEscapeSequence::HexDigits(token::HexDigits(String::from("1111Aa"))),
-            UnicodeEscapeSequence::HexDigits(token::HexDigits(String::from("12")))
-        ]),
+        Token::IdentifierName(String::from("\\u{1111Aa}\\u{12}")),
         Token::EOF
     ]
 );
@@ -174,9 +166,7 @@ should!(
     identifiername_3,
     "$\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("$\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -184,9 +174,7 @@ should!(
     identifiername_4,
     "_\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("_\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -194,10 +182,7 @@ should!(
     identifiername_5,
     "\u{1E943}\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![
-            token::UnicodeEscapeSequence::Letter('\u{1E943}'),
-            UnicodeEscapeSequence::HexDigits(token::HexDigits(String::from("1111Aa")))
-        ]),
+        Token::IdentifierName(String::from("\u{1E943}\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -206,9 +191,7 @@ should!(
     identifiername_6,
     "$$\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("$$\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -216,11 +199,7 @@ should!(
     identifiername_7,
     "\u{1E943}\u{1E959}\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![
-            token::UnicodeEscapeSequence::Letter('\u{1E943}'),
-            token::UnicodeEscapeSequence::Letter('\u{1E959}'),
-            UnicodeEscapeSequence::HexDigits(token::HexDigits(String::from("1111Aa")))
-        ]),
+        Token::IdentifierName(String::from("\u{1E943}\u{1E959}\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -228,9 +207,7 @@ should!(
     identifiername_8,
     "$\u{200C}\u{200D}\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("$\u{200C}\u{200D}\\u{1111Aa}")),
         Token::EOF
     ]
 );
@@ -238,25 +215,23 @@ should_fail!(
     identifiername_9,
     "\u{200C}\u{200D}\\u{1111Aa}",
     vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::HexDigits(token::HexDigits(
-            String::from("1111Aa")
-        ))]),
+        Token::IdentifierName(String::from("\u{200C}\u{200D}\\u{1111Aa}")),
         Token::EOF
     ]
 );
 should!(
     identifiername_10,
     r"\u11Aa",
-    vec![
-        Token::IdentifierName(vec![UnicodeEscapeSequence::Hex4Digits(
-            token::HexDigit('1'),
-            token::HexDigit('1'),
-            token::HexDigit('A'),
-            token::HexDigit('a')
-        )]),
-        Token::EOF
-    ]
+    vec![Token::IdentifierName(String::from(r"\u11Aa")), Token::EOF]
 );
+
+#[derive(PartialEq, Debug, Clone)]
+pub enum UnicodeEscapeSequence {
+    HexDigits(HexDigits),
+    Hex4Digits(HexDigit, HexDigit, HexDigit, HexDigit),
+    NOP,
+    Letter(char),
+}
 
 fn nop<T>(_: T) -> UnicodeEscapeSequence {
     UnicodeEscapeSequence::NOP
@@ -1018,7 +993,7 @@ should!(div_punctuator_1, "/", vec![Token::Slash, Token::EOF]);
 should!(
     div_punctuator_2,
     "/ /=",
-    vec![Token::Slash, Token::SP, Token::SlashEqual, Token::EOF]
+    vec![Token::Slash, Token::SlashEqual, Token::EOF]
 );
 
 named_token!(slash_punctuation, "/", Token::Slash);

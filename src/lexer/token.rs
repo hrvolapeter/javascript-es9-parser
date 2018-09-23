@@ -9,14 +9,6 @@ pub struct HexDigit(pub char);
 pub struct HexDigits(pub String);
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum UnicodeEscapeSequence {
-    HexDigits(HexDigits),
-    Hex4Digits(HexDigit, HexDigit, HexDigit, HexDigit),
-    NOP,
-    Letter(char),
-}
-
-#[derive(PartialEq, Debug, Clone)]
 pub struct Number {
     integer: u32,
     decimal: u32,
@@ -53,7 +45,7 @@ pub enum Token {
     LSeven,
     LEight,
     LNine,
-    IdentifierName(Vec<UnicodeEscapeSequence>),
+    IdentifierName(String),
     CodePoint(HexDigits),
     Hex4Digits(HexDigit, HexDigit, HexDigit, HexDigit),
     HexDigit(HexDigit),
