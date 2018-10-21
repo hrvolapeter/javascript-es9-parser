@@ -1,4 +1,7 @@
 extern crate js_parser;
+#[cfg(test)] // <-- not needed in examples + integration tests
+#[macro_use]
+extern crate pretty_assertions;
 
 use js_parser::lexer::token::{Number, Token};
 use js_parser::lexer::Lexer;
@@ -10,13 +13,14 @@ fn simple_js_example() {
     function a(a1, b1) {
         let a = "ada \n";
         const b = "dada\b\t";
-        var e = 1.2;
+        var e, f, g = 1.2;
         var c = 'adad'
     }
 
     a(1, "ddada");
     "#,
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(
         unparsed.len(),
         0,
@@ -50,6 +54,10 @@ fn simple_js_example() {
             Token::LF,
             Token::IdentifierName(String::from("var")),
             Token::IdentifierName(String::from("e")),
+            Token::Comma,
+            Token::IdentifierName(String::from("f")),
+            Token::Comma,
+            Token::IdentifierName(String::from("g")),
             Token::Assign,
             Token::NumericLiteral(Number::new(1, 2, 1, 10)),
             Token::Semicolon,

@@ -1,2 +1,2 @@
-edition = "Edition2018"
+edition = "2018"
 error_on_unformatted = true
