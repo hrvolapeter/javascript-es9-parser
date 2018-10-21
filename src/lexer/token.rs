@@ -45,12 +45,14 @@ pub enum Token {
     LSeven,
     LEight,
     LNine,
+    LNull,
     IdentifierName(String),
     CodePoint(HexDigits),
     Hex4Digits(HexDigit, HexDigit, HexDigit, HexDigit),
     HexDigit(HexDigit),
     NumericLiteral(Number),
     StringLiteral(String),
+    BoolLiteral(bool),
     ZWNJ,
     ZWJ,
     IDContinue,
@@ -129,9 +131,9 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
-    pub fn new(vec: &'a Vec<Token>) -> Self {
+    pub fn new(vec: &'a [Token]) -> Self {
         Tokens {
-            tok: vec.as_slice(),
+            tok: vec,
             start: 0,
             end: vec.len(),
         }

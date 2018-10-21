@@ -141,10 +141,14 @@ fn IdentifierName(input: CompleteStr) -> ParseResult {
     let identifierStart = IdentifierStart(input)?;
     let identifierRest = many0!(identifierStart.0, IdentifierPart)?;
     let len = input.len() - identifierRest.0.len();
-    Ok((
-        identifierRest.0,
-        Token::IdentifierName(String::from(&(*input)[..len])),
-    ))
+    let ident = &(*input)[..len];
+    let ident = match ident {
+        "true" => Token::BoolLiteral(true),
+        "false" => Token::BoolLiteral(false),
+        "null" => Token::LNull,
+        _ => Token::IdentifierName(String::from(ident)),
+    };
+    Ok((identifierRest.0, ident))
 }
 should!(
     identifiername_1,
@@ -238,7 +242,7 @@ fn nop<T>(_: T) -> UnicodeEscapeSequence {
 }
 
 named!(IdentifierStart<CompleteStr, UnicodeEscapeSequence>, alt_longest!(
-          map!(UnicodeIDStart, |c| UnicodeEscapeSequence::Letter(c)) |
+          map!(UnicodeIDStart, UnicodeEscapeSequence::Letter) |
           map!(tag!("$"), nop) |
           map!(tag!("_"), nop) |
           do_parse!(
@@ -249,7 +253,7 @@ named!(IdentifierStart<CompleteStr, UnicodeEscapeSequence>, alt_longest!(
 ));
 
 named!(IdentifierPart<CompleteStr, UnicodeEscapeSequence>, alt_longest!(
-          map!(UnicodeIDContinue, |c| UnicodeEscapeSequence::Letter(c)) |
+          map!(UnicodeIDContinue, UnicodeEscapeSequence::Letter) |
           map!(tag!("$"), nop) |
           do_parse!(
               backslash_punctuation >>
@@ -1006,13 +1010,13 @@ should!(
 );
 
 //
-// RIGH BRACE PUNCTUATOR
+// RIGHT BRACE PUNCTUATOR
 //
-named_js!(RightBracePunctuator: righbrace_punctuation);
+named_js!(RightBracePunctuator: rightbrace_punctuation);
 
-named_token!(righbrace_punctuation, "}", Token::RBrace);
+named_token!(rightbrace_punctuation, "}", Token::RBrace);
 should!(
-    righbrace_punctuation_1,
+    rightbrace_punctuation_1,
     "}",
     vec![Token::RBrace, Token::EOF]
 );

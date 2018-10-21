@@ -1,7 +1,10 @@
+use mopa;
 /// AST tree interfaces as specified in ESTree standart
 /// https://github.com/estree/estree/
+use std::fmt::Debug;
 
-trait Node {}
+pub trait Node: Debug + mopa::Any {}
+mopafy!(Node);
 
 struct SourceLocation {
     source: Option<String>,
@@ -14,46 +17,38 @@ struct Position {
     column: i32, // >= 0
 }
 
-trait Identifier: Expression + Pattern {
+pub trait Identifier: Expression + Pattern {
     fn get_name(&self) -> &str;
 }
 
-trait Literal: Expression {}
-enum LiteralS {
-    StringLiteral,
-    BooleanLiteral,
-    NullLiteral,
-    NumberLiteral,
-    RegExpLiteral,
-}
-
-struct StringLiteral {}
-
-struct BooleanLiteral {}
-
-struct NullLiteral {}
-
-struct NumberLiteral {}
+pub trait Literal: Expression {}
 
 struct Regex {}
 
 trait RegExpLiteral: Literal {
     fn get_regex(&self) -> &Regex;
 }
-
-trait Program: Node {
+pub trait Program: Node {
     fn get_body(&self) -> &Vec<ProgramBody>;
     fn get_source_type(&self) -> &ProgramSourceType;
 }
 
-enum ProgramSourceType {
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ProgramSourceType {
     Script,
     Module,
 }
 
-enum ProgramBody {
+#[derive(Debug)]
+pub enum ProgramStatement {
+    VariableDeclaration(Box<VariableDeclaration>),
+    BlockStatement(Box<BlockStatement>),
+}
+
+#[derive(Debug)]
+pub enum ProgramBody {
     ProgramDirective,
-    ProgramStatement,
+    ProgramStatement(Box<Statement>),
 }
 
 trait Function: Node {
@@ -64,7 +59,8 @@ trait Function: Node {
     fn get_async(&self) -> bool;
 }
 
-trait Statement: Node {}
+pub trait Statement: Node {}
+mopafy!(Statement);
 
 trait ExpressionStatement: Statement {
     fn get_expression(&self) -> &Box<Expression>;
@@ -75,7 +71,7 @@ trait Directive: Node {
     fn get_directive(&self) -> &String;
 }
 
-trait BlockStatement: Statement {
+pub trait BlockStatement: Statement {
     fn get_body(&self) -> &Vec<Box<Statement>>;
 }
 
@@ -88,7 +84,7 @@ enum FunctionBodyEnum {
     Statement,
 }
 
-trait EmptyStatement: Statement {}
+pub trait EmptyStatement: Statement {}
 
 trait DebuggerStatement: Statement {}
 
@@ -182,30 +178,34 @@ trait ForOfStatement: ForInStatement {
     fn get_await(&self) -> bool;
 }
 
-trait Declaration: Statement {}
+pub trait Declaration: Statement {}
 
 // Declarations
 trait FunctionDeclaration: Function + Declaration {
     fn get_id(&self) -> &Identifier;
 }
 
-trait VariableDeclaration: Declaration {
+pub trait VariableDeclaration: Declaration {
     fn get_declarations(&self) -> &Vec<Box<VariableDeclarator>>;
     fn get_kind(&self) -> &VariableDeclarationKind;
 }
 
-enum VariableDeclarationKind {
+#[derive(Debug, PartialEq)]
+pub enum VariableDeclarationKind {
     Const,
     Let,
     Var,
 }
 
-trait VariableDeclarator: Node {
+pub trait VariableDeclarator: Node {
     fn get_id(&self) -> &Box<Pattern>;
     fn get_init(&self) -> &Option<Box<Expression>>;
 }
 
-trait Expression: Node {}
+pub trait Expression: Node {
+    fn box_clone(&self) -> Box<Expression>;
+}
+mopafy!(Expression);
 
 trait ThisExpression: Expression {}
 
@@ -218,22 +218,37 @@ enum ArrayExpressionElement {
     SpreadElement(Box<SpreadElement>),
 }
 
-trait ObjectExpression: Expression {
+pub trait ObjectExpression: Expression {
     fn get_properties(&self) -> &Vec<ObjectExpressionProperty>;
 }
 
-enum ObjectExpressionProperty {
+#[derive(Debug)]
+pub enum ObjectExpressionProperty {
     Property(Box<Property>),
     SpreadElement(Box<SpreadElement>),
 }
 
-trait Property: Node {
+impl Clone for ObjectExpressionProperty {
+    fn clone(&self) -> Self {
+        match self {
+            ObjectExpressionProperty::Property(r) => {
+                ObjectExpressionProperty::Property(r.box_clone())
+            }
+            ObjectExpressionProperty::SpreadElement(r) => {
+                ObjectExpressionProperty::SpreadElement(r.box_clone())
+            }
+        }
+    }
+}
+
+pub trait Property: Node {
     fn get_key(&self) -> &Box<Expression>;
     fn get_value(&self) -> &Box<Expression>;
-    fn get_kind(&self) -> &str;
+    fn get_kind(&self) -> String;
     fn get_method(&self) -> bool;
     fn get_shorthand(&self) -> bool;
     fn get_computed(&self) -> bool;
+    fn box_clone(&self) -> Box<Property>;
 }
 
 trait FunctionExpression: Function + Expression {}
@@ -296,13 +311,14 @@ enum BinaryOperator {
     StarStar,
 }
 
-trait AssignmentExpression: Expression {
+pub trait AssignmentExpression: Expression {
     fn get_operator(&self) -> &AssignmentOperator;
     fn get_left(&self) -> &Box<Pattern>;
     fn get_right(&self) -> &Box<Expression>;
 }
 
-enum AssignmentOperator {
+#[derive(Debug)]
+pub enum AssignmentOperator {
     Equal,
     PlusEqual,
     MinusEqual,
@@ -375,12 +391,16 @@ trait SequenceExpression: Expression {
     fn get_expressions(&self) -> &Vec<Box<Expression>>;
 }
 
-trait Pattern: Node {}
+pub trait Pattern: Node {
+    fn box_clone(&self) -> Box<Pattern>;
+}
+mopafy!(Pattern);
 
 trait Super: Node {}
 
-trait SpreadElement: Node {
+pub trait SpreadElement: Node {
     fn get_argument(&self) -> &Box<Expression>;
+    fn box_clone(&self) -> Box<SpreadElement>;
 }
 
 trait ArrowFunctionExpression: Function + Expression {
@@ -417,7 +437,7 @@ trait TemplateElement: Node {
     fn get_value(&self) -> &TemplateElementValue;
 }
 
-trait AssignmentProperty: Property {
+pub trait AssignmentProperty: Property {
     fn get_value(&self) -> &Box<Pattern>;
     fn get_kind(&self) -> &AssignmentPropertyKind {
         &AssignmentPropertyKind::Init
@@ -425,30 +445,47 @@ trait AssignmentProperty: Property {
     fn get_method(&self) -> bool {
         false
     }
+    fn box_clone(&self) -> Box<AssignmentProperty>;
 }
 
-enum AssignmentPropertyKind {
+#[derive(Debug)]
+pub enum AssignmentPropertyKind {
     Init,
 }
 
-trait ObjectPattern: Pattern {
+pub trait ObjectPattern: Pattern {
     fn get_properties(&self) -> &Vec<ObjectPatternProperty>;
 }
 
-enum ObjectPatternProperty {
+#[derive(Debug)]
+pub enum ObjectPatternProperty {
     AssignmentProperty(Box<AssignmentProperty>),
     RestElement(Box<RestElement>),
 }
 
-trait ArrayPattern: Pattern {
+impl Clone for ObjectPatternProperty {
+    fn clone(&self) -> Self {
+        match self {
+            ObjectPatternProperty::AssignmentProperty(p) => {
+                ObjectPatternProperty::AssignmentProperty(AssignmentProperty::box_clone(&**p))
+            }
+            ObjectPatternProperty::RestElement(p) => {
+                ObjectPatternProperty::RestElement(RestElement::box_clone(&**p))
+            }
+        }
+    }
+}
+
+pub trait ArrayPattern: Pattern {
     fn get_elements(&self) -> &Vec<Option<Box<Pattern>>>;
 }
 
-trait RestElement: Pattern {
+pub trait RestElement: Pattern {
     fn get_argument(&self) -> &Box<Pattern>;
+    fn box_clone(&self) -> Box<RestElement>;
 }
 
-trait AssignmentPattern: Pattern {
+pub trait AssignmentPattern: Pattern {
     fn get_left(&self) -> &Box<Pattern>;
     fn get_right(&self) -> &Box<Expression>;
 }
