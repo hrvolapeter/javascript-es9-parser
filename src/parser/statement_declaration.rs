@@ -1,17 +1,18 @@
-use crate::lexer::token::Token;
-use crate::parser::estree;
-use crate::parser::input_wrapper::InputWrapper;
-use crate::parser::node;
-// Needed because of bug in compiler, which can't star import structs that use derive
+use crate::{
+    lexer::token::Token,
+    parser::{estree, input_wrapper::InputWrapper, node},
+};
+// Needed because of bug in compiler, which can't star import structs that use
+// derive
 use crate::parser::node::{
     ArrayPattern, ArrowFunctionExpression, AssignmentPattern, AssignmentProperty, BlockStatement,
     Identifier, ObjectExpression, ObjectPattern, RestElement, VariableDeclaration,
     VariableDeclarator,
 };
-use nom::types::Input;
-use nom::types::*;
-use nom::IResult;
-use nom::*;
+use nom::{
+    types::{Input, *},
+    IResult, *,
+};
 use std::any::Any;
 
 named!(pub ScriptBody<Input<InputWrapper>, Vec<estree::ProgramBody>>, do_parse!(
@@ -1731,12 +1732,13 @@ named!(pub Literal<Input<InputWrapper>, Box<estree::Expression>>, alt!(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::lexer::Lexer;
-    use crate::parser::estree::*;
-    use crate::parser::estree::{
-        AssignmentPattern, Identifier, ObjectPattern, VariableDeclaration,
+    use crate::{
+        lexer::Lexer,
+        parser::{
+            estree::{AssignmentPattern, Identifier, ObjectPattern, VariableDeclaration, *},
+            Parser,
+        },
     };
-    use crate::parser::Parser;
 
     #[test]
     fn simple_var() {

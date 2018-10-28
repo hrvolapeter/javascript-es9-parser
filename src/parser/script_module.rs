@@ -1,9 +1,12 @@
-use crate::lexer::token::Token;
-use crate::parser::estree;
-use crate::parser::estree::ProgramSourceType;
-use crate::parser::input_wrapper::InputWrapper;
-use crate::parser::node;
-use crate::parser::statement_declaration::ScriptBody;
+use crate::{
+    lexer::token::Token,
+    parser::{
+        estree::{self, ProgramSourceType},
+        input_wrapper::InputWrapper,
+        node,
+        statement_declaration::ScriptBody,
+    },
+};
 use nom::types::Input;
 
 pub fn parse_script(tokens: Vec<Token>, ty: ProgramSourceType) -> Box<estree::Program> {

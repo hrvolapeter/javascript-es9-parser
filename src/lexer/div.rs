@@ -1,8 +1,8 @@
-use crate::lexer::token;
-use crate::lexer::token::{HexDigit, HexDigits, Number, Token};
-use crate::lexer::ParseResult;
-use nom::types::*;
-use nom::*;
+use crate::lexer::{
+    token::{self, HexDigit, HexDigits, Number, Token},
+    ParseResult,
+};
+use nom::{types::*, *};
 use unescape::unescape;
 
 named_js!(
@@ -14,9 +14,6 @@ named_js!(
         | RightBracePunctuator
 );
 
-//
-// WHITE SPACE
-//
 named_js!(WhiteSpace: TAB | VT | FF | SP | NBSP | ZWNBSP);
 should!(
     whitespace_all,
@@ -48,10 +45,6 @@ should!(
     vec![Token::ZWNBSP, Token::EOF]
 );
 
-//
-// LINE TERMINATOR
-//
-
 named_js!(LineTerminator: LF | CR | LS | PS);
 should!(
     lineterminator_all,
@@ -70,10 +63,6 @@ should!(lineterminator_ls, "\u{2028}", vec![Token::LS, Token::EOF]);
 
 named_token_unicode!(PS, 0x2029, Token::PS);
 should!(lineterminator_ps, "\u{2029}", vec![Token::PS, Token::EOF]);
-
-//
-// Comment
-//
 
 named_js!(Comment: MultiLineComment | SingleLineComment);
 should!(
@@ -131,10 +120,7 @@ named_js!(SingleLineCommentChars: do_parse!(many1!(SingleLineCommentChar) >> (To
 
 named_js!(SingleLineCommentChar: do_parse!(not!(LineTerminator) >> take!(1) >> (Token::NOP)));
 
-//
-// COMMON TOKEN
-//
-named_js!(CommonToken: IdentifierName | Punctuator | NumericLiteral | StringLiteral /*Template*/);
+named_js!(CommonToken: IdentifierName | Punctuator | NumericLiteral | StringLiteral);
 
 #[inline]
 fn IdentifierName(input: CompleteStr) -> ParseResult {
@@ -756,15 +742,13 @@ should_fail!(
 should_incomplete!(string_literal_8, "\"\n\"");
 should!(
     string_literal_9,
-    "\"a\
-     a\"",
+    "\"aa\"",
     vec![Token::StringLiteral(String::from("aa")), Token::EOF]
 );
 should_incomplete!(string_literal_10, "'\n'");
 should!(
     string_literal_11,
-    "'a\
-     a'",
+    "'aa'",
     vec![Token::StringLiteral(String::from("aa")), Token::EOF]
 );
 should_incomplete!(string_literal_12, r"'\01'");
@@ -1015,9 +999,6 @@ named!(EscapeCharacter<CompleteStr, CompleteStr>, alt_longest!(
     tag!("u")
 ));
 
-//
-// DIV PUNCTUATOR
-//
 named_js!(DivPunctuator: slash_punctuation | slashequal_punctuation);
 should!(div_punctuator_1, "/", vec![Token::Slash, Token::EOF]);
 should!(
@@ -1035,9 +1016,6 @@ should!(
     vec![Token::SlashEqual, Token::EOF]
 );
 
-//
-// RIGHT BRACE PUNCTUATOR
-//
 named_js!(RightBracePunctuator: rightbrace_punctuation);
 
 named_token!(rightbrace_punctuation, "}", Token::RBrace);

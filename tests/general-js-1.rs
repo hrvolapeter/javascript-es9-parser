@@ -3,8 +3,10 @@ extern crate js_parser;
 #[macro_use]
 extern crate pretty_assertions;
 
-use js_parser::lexer::token::{Number, Token};
-use js_parser::lexer::Lexer;
+use js_parser::lexer::{
+    token::{Number, Token},
+    Lexer,
+};
 
 #[test]
 fn simple_js_example() {

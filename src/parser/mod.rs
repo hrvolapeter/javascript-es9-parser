@@ -1,9 +1,9 @@
 #![allow(warnings)]
-use crate::lexer::token::Token;
-use crate::parser::estree::*;
-use crate::parser::input_wrapper::InputWrapper;
-use nom::types::*;
-use nom::*;
+use crate::{
+    lexer::token::Token,
+    parser::{estree::*, input_wrapper::InputWrapper},
+};
+use nom::{types::*, *};
 
 pub mod estree;
 pub mod node;

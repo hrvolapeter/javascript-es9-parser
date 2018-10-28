@@ -1,6 +1,8 @@
 use nom::*;
-use std::iter::Enumerate;
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use std::{
+    iter::Enumerate,
+    ops::{Range, RangeFrom, RangeFull, RangeTo},
+};
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct HexDigit(pub char);
@@ -252,18 +254,20 @@ impl<'a> Slice<RangeFull> for Tokens<'a> {
 
 impl<'a> InputIter for Tokens<'a> {
     type Item = &'a Token;
-    type RawItem = Token;
     type Iter = Enumerate<::std::slice::Iter<'a, Token>>;
     type IterElem = ::std::slice::Iter<'a, Token>;
+    type RawItem = Token;
 
     #[inline]
     fn iter_indices(&self) -> Enumerate<::std::slice::Iter<'a, Token>> {
         self.tok.iter().enumerate()
     }
+
     #[inline]
     fn iter_elements(&self) -> ::std::slice::Iter<'a, Token> {
         self.tok.iter()
     }
+
     #[inline]
     fn position<P>(&self, predicate: P) -> Option<usize>
     where
@@ -271,6 +275,7 @@ impl<'a> InputIter for Tokens<'a> {
     {
         self.tok.iter().position(|b| predicate(b.clone()))
     }
+
     #[inline]
     fn slice_index(&self, count: usize) -> Option<usize> {
         if self.tok.len() >= count {

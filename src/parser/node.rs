@@ -1,5 +1,4 @@
-use crate::lexer::token::Number;
-use crate::parser::estree;
+use crate::{lexer::token::Number, parser::estree};
 use std::convert::TryFrom;
 
 pub enum Expression {}
@@ -282,6 +281,7 @@ impl estree::RestElement for RestElement {
     fn get_argument(&self) -> &Box<estree::Pattern> {
         &self.argument
     }
+
     fn box_clone(&self) -> Box<estree::RestElement> {
         Box::new((*self).clone())
     }
@@ -314,6 +314,7 @@ impl estree::AssignmentProperty for AssignmentProperty {
     fn get_value(&self) -> &Box<estree::Pattern> {
         &self.value
     }
+
     fn box_clone(&self) -> Box<estree::AssignmentProperty> {
         Box::new((*self).clone())
     }
@@ -323,21 +324,27 @@ impl estree::Property for AssignmentProperty {
     fn get_key(&self) -> &Box<estree::Expression> {
         &self.key
     }
+
     fn get_value(&self) -> &Box<estree::Expression> {
         unreachable!();
     }
+
     fn get_kind(&self) -> String {
         format!("{:?}", <Self as estree::AssignmentProperty>::get_kind(self))
     }
+
     fn get_method(&self) -> bool {
         <Self as estree::AssignmentProperty>::get_method(self)
     }
+
     fn get_shorthand(&self) -> bool {
         self.shorthand
     }
+
     fn get_computed(&self) -> bool {
         false
     }
+
     fn box_clone(&self) -> Box<estree::Property> {
         Box::new((*self).clone())
     }
@@ -363,6 +370,7 @@ impl estree::AssignmentPattern for AssignmentPattern {
     fn get_left(&self) -> &Box<estree::Pattern> {
         &self.left
     }
+
     fn get_right(&self) -> &Box<estree::Expression> {
         &self.right
     }
@@ -391,6 +399,7 @@ impl estree::BlockStatement for BlockStatement {
     fn get_body(&self) -> &Vec<Box<estree::Statement>> {
         &self.body
     }
+
     fn box_clone(&self) -> Box<estree::BlockStatement> {
         Box::new((*self).clone())
     }
@@ -443,6 +452,7 @@ impl estree::ArrowFunctionExpression for ArrowFunctionExpression {
     fn get_body(&self) -> &estree::ArrowFunctionExpressionBody {
         &self.body
     }
+
     fn get_expression(&self) -> bool {
         self.expression
     }
@@ -456,15 +466,19 @@ impl estree::Function for ArrowFunctionExpression {
     fn get_id(&self) -> &Option<Box<estree::Identifier>> {
         &self.id
     }
+
     fn get_params(&self) -> &Vec<Box<estree::Pattern>> {
         &self.params
     }
+
     fn get_body(&self) -> &estree::FunctionBody {
         unimplemented!();
     }
+
     fn get_generator(&self) -> bool {
         self.generator
     }
+
     fn get_async(&self) -> bool {
         self.async_
     }
@@ -529,9 +543,11 @@ impl estree::AssignmentExpression for AssignmentExpression {
     fn get_operator(&self) -> &estree::AssignmentOperator {
         &self.operator
     }
+
     fn get_left(&self) -> &Box<estree::Pattern> {
         &self.left
     }
+
     fn get_right(&self) -> &Box<estree::Expression> {
         &self.right
     }
@@ -564,9 +580,11 @@ impl estree::IfStatement for IfStatement {
     fn get_test(&self) -> &Box<estree::Expression> {
         &self.test
     }
+
     fn get_consequent(&self) -> &Box<estree::Statement> {
         &self.consequent
     }
+
     fn get_alternate(&self) -> &Option<Box<estree::Statement>> {
         &self.alternate
     }
@@ -647,6 +665,7 @@ impl estree::DoWhileStatement for DoWhileStatement {
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
+
     fn get_test(&self) -> &Box<estree::Expression> {
         &self.test
     }
@@ -677,6 +696,7 @@ impl estree::WhileStatement for WhileStatement {
     fn get_test(&self) -> &Box<estree::Expression> {
         &self.test
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -711,12 +731,15 @@ impl estree::ForStatement for ForStatement {
     fn get_init(&self) -> &Option<estree::ForStatementInit> {
         &self.init
     }
+
     fn get_test(&self) -> &Option<Box<estree::Expression>> {
         &self.test
     }
+
     fn get_update(&self) -> &Option<Box<estree::Expression>> {
         &self.update
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -749,9 +772,11 @@ impl estree::ForInStatement for ForInStatement {
     fn get_left(&self) -> &estree::ForInStatementLeft {
         &self.left
     }
+
     fn get_right(&self) -> &Box<estree::Expression> {
         &self.right
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -793,9 +818,11 @@ impl estree::ForInStatement for ForOfStatement {
     fn get_left(&self) -> &estree::ForInStatementLeft {
         &self.left
     }
+
     fn get_right(&self) -> &Box<estree::Expression> {
         &self.right
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -826,6 +853,7 @@ impl estree::SwitchStatement for SwitchStatement {
     fn get_discriminant(&self) -> &Box<estree::Expression> {
         &self.discriminant
     }
+
     fn get_cases(&self) -> &Vec<Box<estree::SwitchCase>> {
         &self.case
     }
@@ -856,6 +884,7 @@ impl estree::SwitchCase for SwitchCase {
     fn get_test(&self) -> &Option<Box<estree::Expression>> {
         &self.test
     }
+
     fn get_consequent(&self) -> &Vec<Box<estree::Statement>> {
         &self.consequent
     }
@@ -966,6 +995,7 @@ impl estree::WithStatement for WithStatement {
     fn get_object(&self) -> &Box<estree::Expression> {
         &self.object
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -996,6 +1026,7 @@ impl estree::LabeledStatement for LabeledStatement {
     fn get_label(&self) -> &Box<estree::Identifier> {
         &self.label
     }
+
     fn get_body(&self) -> &Box<estree::Statement> {
         &self.body
     }
@@ -1058,9 +1089,11 @@ impl estree::TryStatement for TryStatement {
     fn get_block(&self) -> &Box<estree::BlockStatement> {
         &self.block
     }
+
     fn get_handler(&self) -> &Option<Box<estree::CatchClause>> {
         &self.handler
     }
+
     fn get_finalizer(&self) -> &Option<Box<estree::BlockStatement>> {
         &self.finalizer
     }
@@ -1090,9 +1123,11 @@ impl estree::CatchClause for CatchClause {
     fn get_param(&self) -> &Box<estree::Pattern> {
         &self.param
     }
+
     fn get_body(&self) -> &Box<estree::BlockStatement> {
         &self.body
     }
+
     fn box_clone(&self) -> Box<estree::CatchClause> {
         box (*self).clone()
     }
