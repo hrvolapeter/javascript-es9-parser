@@ -1,3 +1,4 @@
+use crate::lexer;
 use mopa;
 /// AST tree interfaces as specified in ESTree standart
 /// https://github.com/estree/estree/
@@ -19,6 +20,8 @@ struct Position {
 
 pub trait Identifier: Expression + Pattern {
     fn get_name(&self) -> &str;
+
+    fn box_clone(&self) -> Box<Identifier>;
 }
 
 pub trait Literal: Expression {}
@@ -51,7 +54,7 @@ pub enum ProgramBody {
     ProgramStatement(Box<Statement>),
 }
 
-trait Function: Node {
+pub trait Function: Node {
     fn get_id(&self) -> &Option<Box<Identifier>>;
     fn get_params(&self) -> &Vec<Box<Pattern>>;
     fn get_body(&self) -> &FunctionBody;
@@ -59,122 +62,172 @@ trait Function: Node {
     fn get_async(&self) -> bool;
 }
 
-pub trait Statement: Node {}
+pub trait Statement: Node {
+    fn box_clone(&self) -> Box<Statement>;
+}
 mopafy!(Statement);
 
-trait ExpressionStatement: Statement {
+pub trait ExpressionStatement: Statement {
     fn get_expression(&self) -> &Box<Expression>;
 }
 
-trait Directive: Node {
+pub trait Directive: Node {
     fn get_expression(&self) -> &Literal;
     fn get_directive(&self) -> &String;
+
+    fn box_clone(&self) -> Box<Directive>;
 }
 
 pub trait BlockStatement: Statement {
     fn get_body(&self) -> &Vec<Box<Statement>>;
+
+    fn box_clone(&self) -> Box<BlockStatement>;
 }
 
-trait FunctionBody: BlockStatement {
+pub trait FunctionBody: BlockStatement {
     fn get_body(&self) -> &Vec<FunctionBodyEnum>;
+
+    fn box_clone(&self) -> Box<FunctionBody>;
 }
 
-enum FunctionBodyEnum {
-    Directive,
-    Statement,
+#[derive(Debug)]
+pub enum FunctionBodyEnum {
+    Directive(Box<Directive>),
+    Statement(Box<Statement>),
+}
+
+impl Clone for FunctionBodyEnum {
+    fn clone(&self) -> Self {
+        match self {
+            FunctionBodyEnum::Directive(p) => {
+                FunctionBodyEnum::Directive(Directive::box_clone(&**p))
+            }
+            FunctionBodyEnum::Statement(p) => {
+                FunctionBodyEnum::Statement(Statement::box_clone(&**p))
+            }
+        }
+    }
 }
 
 pub trait EmptyStatement: Statement {}
 
-trait DebuggerStatement: Statement {}
+pub trait DebuggerStatement: Statement {}
 
-trait WithStatement: Statement {
+pub trait WithStatement: Statement {
     fn get_object(&self) -> &Box<Expression>;
-    fn get_body(&self) -> &Statement;
+    fn get_body(&self) -> &Box<Statement>;
 }
 
-trait ReturnStatement: Statement {
+pub trait ReturnStatement: Statement {
     fn get_argument(&self) -> &Option<Box<Expression>>;
 }
 
-trait LabeledStatement: Statement {
-    fn get_label(&self) -> &Identifier;
-    fn get_body(&self) -> &Statement;
+pub trait LabeledStatement: Statement {
+    fn get_label(&self) -> &Box<Identifier>;
+    fn get_body(&self) -> &Box<Statement>;
 }
 
-trait BreakStatement: Statement {
+pub trait BreakStatement: Statement {
     fn get_label(&self) -> &Option<Box<Identifier>>;
 }
 
-trait ContinueStatement: Statement {
+pub trait ContinueStatement: Statement {
     fn get_label(&self) -> &Option<Box<Identifier>>;
 }
 
-trait IfStatement: Statement {
+pub trait IfStatement: Statement {
     fn get_test(&self) -> &Box<Expression>;
-    fn get_consequent(&self) -> &Statement;
+    fn get_consequent(&self) -> &Box<Statement>;
     fn get_alternate(&self) -> &Option<Box<Statement>>;
 }
 
-trait SwitchStatement: Statement {
+pub trait SwitchStatement: Statement {
     fn get_discriminant(&self) -> &Box<Expression>;
     fn get_cases(&self) -> &Vec<Box<SwitchCase>>;
 }
 
-trait SwitchCase: Node {
+pub trait SwitchCase: Node {
     fn get_test(&self) -> &Option<Box<Expression>>;
     fn get_consequent(&self) -> &Vec<Box<Statement>>;
+
+    fn box_clone(&self) -> Box<SwitchCase>;
 }
 
-trait ThrowStatement: Statement {
-    fn get_argument(&self) -> Box<Expression>;
+pub trait ThrowStatement: Statement {
+    fn get_argument(&self) -> &Box<Expression>;
 }
 
-trait TryStatement: Statement {
-    fn get_block(&self) -> &BlockStatement;
+pub trait TryStatement: Statement {
+    fn get_block(&self) -> &Box<BlockStatement>;
     fn get_handler(&self) -> &Option<Box<CatchClause>>;
     fn get_finalizer(&self) -> &Option<Box<BlockStatement>>;
 }
 
-trait CatchClause: Node {
+pub trait CatchClause: Node {
     fn get_param(&self) -> &Box<Pattern>;
-    fn get_body(&self) -> &BlockStatement;
+    fn get_body(&self) -> &Box<BlockStatement>;
+
+    fn box_clone(&self) -> Box<CatchClause>;
 }
 
-trait WhileStatement: Statement {
+pub trait WhileStatement: Statement {
     fn get_test(&self) -> &Box<Expression>;
-    fn get_body(&self) -> &Statement;
+    fn get_body(&self) -> &Box<Statement>;
 }
 
-trait DoWhileStatement: Statement {
-    fn get_body(&self) -> &Statement;
+pub trait DoWhileStatement: Statement {
+    fn get_body(&self) -> &Box<Statement>;
     fn get_test(&self) -> &Box<Expression>;
 }
 
-trait ForStatement: Statement {
+pub trait ForStatement: Statement {
     fn get_init(&self) -> &Option<ForStatementInit>;
     fn get_test(&self) -> &Option<Box<Expression>>;
     fn get_update(&self) -> &Option<Box<Expression>>;
-    fn get_body(&self) -> &Statement;
+    fn get_body(&self) -> &Box<Statement>;
 }
 
-enum ForStatementInit {
-    VariableDeclaration,
-    Expression,
+#[derive(Debug)]
+pub enum ForStatementInit {
+    VariableDeclaration(Box<VariableDeclaration>),
+    Expression(Box<Expression>),
 }
 
-trait ForInStatement: Statement {
-    fn get_left(&self) -> &Box<ForInStatementLeft>;
+impl Clone for ForStatementInit {
+    fn clone(&self) -> Self {
+        match self {
+            ForStatementInit::VariableDeclaration(r) => {
+                ForStatementInit::VariableDeclaration(VariableDeclaration::box_clone(&**r))
+            }
+            ForStatementInit::Expression(r) => ForStatementInit::Expression(r.box_clone()),
+        }
+    }
+}
+
+pub trait ForInStatement: Statement {
+    fn get_left(&self) -> &ForInStatementLeft;
     fn get_right(&self) -> &Box<Expression>;
-    fn get_body(&self) -> &Statement;
+    fn get_body(&self) -> &Box<Statement>;
 }
 
-enum ForInStatementLeft {
-    VariableDeclaration,
-    Pattern,
+#[derive(Debug)]
+pub enum ForInStatementLeft {
+    VariableDeclaration(Box<VariableDeclaration>),
+    Pattern(Box<Pattern>),
 }
 
-trait ForOfStatement: ForInStatement {
+impl Clone for ForInStatementLeft {
+    fn clone(&self) -> Self {
+        match self {
+            ForInStatementLeft::VariableDeclaration(r) => {
+                ForInStatementLeft::VariableDeclaration(VariableDeclaration::box_clone(&**r))
+            }
+            ForInStatementLeft::Pattern(r) => ForInStatementLeft::Pattern(r.box_clone()),
+        }
+    }
+}
+
+pub trait ForOfStatement: ForInStatement {
     fn get_await(&self) -> bool;
 }
 
@@ -188,18 +241,34 @@ trait FunctionDeclaration: Function + Declaration {
 pub trait VariableDeclaration: Declaration {
     fn get_declarations(&self) -> &Vec<Box<VariableDeclarator>>;
     fn get_kind(&self) -> &VariableDeclarationKind;
+
+    fn box_clone(&self) -> Box<VariableDeclaration>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum VariableDeclarationKind {
     Const,
     Let,
     Var,
 }
 
+impl From<lexer::token::Token> for VariableDeclarationKind {
+    fn from(other: lexer::token::Token) -> Self {
+        use crate::lexer::token::Token;
+        match other {
+            Token::KLet => VariableDeclarationKind::Let,
+            Token::KVar => VariableDeclarationKind::Var,
+            Token::KConst => VariableDeclarationKind::Const,
+            _ => unreachable!(),
+        }
+    }
+}
+
 pub trait VariableDeclarator: Node {
     fn get_id(&self) -> &Box<Pattern>;
     fn get_init(&self) -> &Option<Box<Expression>>;
+
+    fn box_clone(&self) -> Box<VariableDeclarator>;
 }
 
 pub trait Expression: Node {
@@ -317,7 +386,7 @@ pub trait AssignmentExpression: Expression {
     fn get_right(&self) -> &Box<Expression>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum AssignmentOperator {
     Equal,
     PlusEqual,
@@ -387,7 +456,7 @@ enum NewExpressionArgument {
     Super(Box<Super>),
 }
 
-trait SequenceExpression: Expression {
+pub trait SequenceExpression: Expression {
     fn get_expressions(&self) -> &Vec<Box<Expression>>;
 }
 
@@ -403,14 +472,28 @@ pub trait SpreadElement: Node {
     fn box_clone(&self) -> Box<SpreadElement>;
 }
 
-trait ArrowFunctionExpression: Function + Expression {
+pub trait ArrowFunctionExpression: Function + Expression {
     fn get_body(&self) -> &ArrowFunctionExpressionBody;
     fn get_expression(&self) -> bool;
 }
 
-enum ArrowFunctionExpressionBody {
+#[derive(Debug)]
+pub enum ArrowFunctionExpressionBody {
     FunctionBody(Box<FunctionBody>),
     Expression(Box<Expression>),
+}
+
+impl Clone for ArrowFunctionExpressionBody {
+    fn clone(&self) -> Self {
+        match self {
+            ArrowFunctionExpressionBody::FunctionBody(p) => {
+                ArrowFunctionExpressionBody::FunctionBody(FunctionBody::box_clone(&**p))
+            }
+            ArrowFunctionExpressionBody::Expression(p) => {
+                ArrowFunctionExpressionBody::Expression(Expression::box_clone(&**p))
+            }
+        }
+    }
 }
 
 trait YieldExpression: Expression {
