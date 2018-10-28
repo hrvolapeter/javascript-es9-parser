@@ -1,15 +1,13 @@
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
-use nom::types::*;
-use nom::*;
+use nom::{types::*, *};
 use std::str;
 
 pub mod token;
 #[macro_use]
 mod macros;
 mod div;
-use self::div::InputElementDiv;
-use self::token::*;
+use self::{div::InputElementDiv, token::*};
 
 pub(crate) type ParseResult<'a> = IResult<CompleteStr<'a>, Token>;
 

@@ -19,7 +19,7 @@ macro_rules! named_token {
 
 #[macro_export]
 macro_rules! should {
-    ($name: ident, $left:expr, $right: expr) => {
+    ($name:ident, $left:expr, $right:expr) => {
         #[cfg(test)]
         #[test]
         fn $name() {
@@ -42,7 +42,7 @@ macro_rules! should {
 
 #[macro_export]
 macro_rules! should_ignore {
-    ($name: ident, $left:expr, $right: expr) => {
+    ($name:ident, $left:expr, $right:expr) => {
         #[cfg(test)]
         #[test]
         #[ignore]
@@ -66,7 +66,7 @@ macro_rules! should_ignore {
 
 #[macro_export]
 macro_rules! should_fail {
-    ($name: ident, $left:expr, $right: expr) => {
+    ($name:ident, $left:expr, $right:expr) => {
         #[cfg(test)]
         #[test]
         #[should_panic]
@@ -90,7 +90,7 @@ macro_rules! should_fail {
 
 #[macro_export]
 macro_rules! should_incomplete {
-    ($name: ident, $left:expr) => {
+    ($name:ident, $left:expr) => {
         #[cfg(test)]
         #[test]
         #[should_panic]
@@ -173,7 +173,7 @@ macro_rules! alt_longest {
 
 #[macro_export]
 macro_rules! named_token_unicode {
-    ($name: ident, $expr: expr, $type: expr) => {
+    ($name:ident, $expr:expr, $type:expr) => {
         #[inline]
         fn $name(input: CompleteStr) -> IResult<CompleteStr, Token> {
             let mut chars = input.chars();
