@@ -20,15 +20,335 @@ named!(pub ScriptBody<Input<InputWrapper>, Vec<estree::ProgramBody>>, do_parse!(
     (res.into_iter().map(|s| estree::ProgramBody::ProgramStatement(s)).collect())
 ));
 
-named!(pub StatementList<Input<InputWrapper>, Vec<Box<estree::Statement>>>, do_parse!(
-    res: many0!(StatementListItem) >>
-    (res)
+named!(pub StatementList<Input<InputWrapper>, Vec<Box<estree::Statement>>>, alt!(
+    many0!(StatementListItem)
 ));
 
 named!(pub StatementListItem<Input<InputWrapper>, Box<estree::Statement>>, alt!(
-    Statement
+    Statement |
+    do_parse!(
+        res: Declaration >>
+        (estree::Statement::box_clone(&*res)))
 ));
 
+named!(pub Declaration<Input<InputWrapper>, Box<estree::Declaration>>, alt!(
+    HoistableDeclaration |
+    ClassDeclaration |
+    do_parse!(
+        res: LexicalDeclaration >>
+        (estree::Declaration::box_clone(&*res))
+    )
+));
+
+named!(pub ClassDeclaration<Input<InputWrapper>, Box<estree::Declaration>>, alt!(
+    ClassDeclaration1 |
+    ClassDeclaration2
+));
+
+fn ClassDeclaration1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::Declaration>> {
+    let class = is_token!(tokens, Token::KClass)?;
+    let ident = BindingIdentifier(class.0)?;
+    let herritage = ClassHeritage(ident.0);
+    let bracket = is_token!(either(&herritage, ident.0), Token::LBrace)?;
+    let body = ClassBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    Ok((
+        bracket.0,
+        box node::ClassDeclaration {
+            id: Some(box ident.1),
+            super_class: unwrap_or_none(herritage),
+            body: body.1,
+        },
+    ))
+}
+
+fn ClassDeclaration2(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::Declaration>> {
+    let class = is_token!(tokens, Token::KClass)?;
+    let herritage = ClassHeritage(class.0);
+    let bracket = is_token!(either(&herritage, class.0), Token::LBrace)?;
+    let body = ClassBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    unimplemented!("Annonymous classes are not supported")
+}
+
+fn ClassBody(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, Box<estree::ClassBody>> {
+    let elems = many0!(tokens, ClassElement)?;
+
+    Ok((elems.0, box node::ClassBody { body: elems.1 }))
+}
+
+named!(pub ClassElement<Input<InputWrapper>, Box<estree::MethodDefinition>>, alt!(
+    ClassElement1 |
+    ClassElement2
+));
+
+fn ClassElement1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::MethodDefinition>> {
+    let def = MethodDefinition(tokens)?;
+    let semi = many0!(def.0, is_token!(Token::Semicolon))?;
+
+    Ok((semi.0, def.1))
+}
+
+fn ClassElement2(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::MethodDefinition>> {
+    let static_ = is_token!(tokens, Token::KStatic)?;
+    let mut def = MethodDefinition(static_.0)?;
+    def.1
+        .downcast_mut::<node::MethodDefinition>()
+        .unwrap()
+        .static_ = true;
+    let semi = many0!(def.0, is_token!(Token::Semicolon))?;
+
+    Ok((semi.0, def.1))
+}
+
+named!(pub MethodDefinition<Input<InputWrapper>, Box<estree::MethodDefinition>>, alt!(
+    MethodDefinition1 |
+    /*GeneratorMethod |
+    AsyncMethod |
+    AsyncGeneratorMethod |*/
+    MethodDefinition5 |
+    MethodDefinition6
+));
+
+fn MethodDefinition1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::MethodDefinition>> {
+    let name = PropertyName(tokens)?;
+    let bracket = is_token!(name.0, Token::LRound)?;
+    let params = UniqueFormalParameters(bracket.0)?;
+    let bracket = is_token!(params.0, Token::RRound)?;
+    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let body = FunctionBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    Ok((
+        bracket.0,
+        box node::MethodDefinition {
+            key: name.1,
+            value: box node::FunctionExpression {
+                id: None,
+                params: params.1,
+                body: box node::FunctionBody {
+                    body: body
+                        .1
+                        .into_iter()
+                        .map(|i| estree::FunctionBodyEnum::Statement(i))
+                        .collect(),
+                },
+                generator: false,
+                async_: false,
+            },
+            computed: false,
+            static_: false,
+            kind: estree::MethodDefinitionKind::Method,
+        },
+    ))
+}
+
+fn MethodDefinition5(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::MethodDefinition>> {
+    let get = is_token!(tokens, Token::KGet)?;
+    let name = PropertyName(get.0)?;
+    let bracket = is_token!(name.0, Token::LRound)?;
+    let bracket = is_token!(bracket.0, Token::RRound)?;
+    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let body = FunctionBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    Ok((
+        bracket.0,
+        box node::MethodDefinition {
+            key: name.1,
+            value: box node::FunctionExpression {
+                id: None,
+                params: vec![],
+                body: box node::FunctionBody {
+                    body: body
+                        .1
+                        .into_iter()
+                        .map(|i| estree::FunctionBodyEnum::Statement(i))
+                        .collect(),
+                },
+                generator: false,
+                async_: false,
+            },
+            computed: false,
+            static_: false,
+            kind: estree::MethodDefinitionKind::Get,
+        },
+    ))
+}
+
+fn MethodDefinition6(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::MethodDefinition>> {
+    let set = is_token!(tokens, Token::KSet)?;
+    let name = PropertyName(set.0)?;
+    let bracket = is_token!(name.0, Token::LRound)?;
+    let param = FormalParameter(bracket.0)?;
+    let bracket = is_token!(param.0, Token::RRound)?;
+    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let body = FunctionBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    Ok((
+        bracket.0,
+        box node::MethodDefinition {
+            key: name.1,
+            value: box node::FunctionExpression {
+                id: None,
+                params: vec![param.1],
+                body: box node::FunctionBody {
+                    body: body
+                        .1
+                        .into_iter()
+                        .map(|i| estree::FunctionBodyEnum::Statement(i))
+                        .collect(),
+                },
+                generator: false,
+                async_: false,
+            },
+            computed: false,
+            static_: false,
+            kind: estree::MethodDefinitionKind::Set,
+        },
+    ))
+}
+
+fn UniqueFormalParameters(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    FormalParameters(tokens)
+}
+
+fn ClassHeritage(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::Expression>> {
+    let extend = is_token!(tokens, Token::KExtend)?;
+    LeftHandSideExpression(extend.0)
+}
+
+named!(pub HoistableDeclaration<Input<InputWrapper>, Box<estree::Declaration>>, alt!(
+    do_parse!(
+        res: FunctionDeclaration >>
+        (res as Box<estree::Declaration>)) /*|
+    GeneratorDeclaration |
+    AsyncFunctionDeclaration |
+    AsyncGeneratorDeclaration*/
+));
+
+named!(pub FunctionDeclaration<Input<InputWrapper>, Box<node::FunctionDeclaration>>, alt!(
+    FunctionDeclaration1 |
+    FunctionDeclaration2
+));
+
+fn FunctionDeclaration1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<node::FunctionDeclaration>> {
+    let function = is_token!(tokens, Token::KFunction)?;
+    let ident = BindingIdentifier(function.0)?;
+    let bracket = is_token!(ident.0, Token::LRound)?;
+    let params = FormalParameters(bracket.0)?;
+    let bracket = is_token!(params.0, Token::RRound)?;
+    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let body = FunctionBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    Ok((
+        bracket.0,
+        box node::FunctionDeclaration {
+            id: Some(box ident.1),
+            params: params.1,
+            body: box node::FunctionBody {
+                body: body
+                    .1
+                    .into_iter()
+                    .map(|i| estree::FunctionBodyEnum::Statement(i))
+                    .collect(),
+            },
+            generator: false,
+            async_: false,
+        },
+    ))
+}
+
+fn FunctionDeclaration2(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<node::FunctionDeclaration>> {
+    let function = is_token!(tokens, Token::KFunction)?;
+    let bracket = is_token!(function.0, Token::LRound)?;
+    let params = FormalParameters(bracket.0)?;
+    let bracket = is_token!(params.0, Token::RRound)?;
+    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let body = FunctionBody(bracket.0)?;
+    let bracket = is_token!(body.0, Token::RBrace)?;
+
+    unimplemented!("Annonymous functions are not supported")
+}
+
+named!(pub FormalParameters<Input<InputWrapper>, Vec<Box<estree::Pattern>>>, alt!(
+    FunctionRestParameter |
+    FormalParameterList |
+    FormalParameters4 |
+    FormalParameters5 |
+    FormalParameters1
+));
+
+fn FormalParameters1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    Ok((tokens, vec![]))
+}
+
+fn FunctionRestParameter(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    let rest = BindingRestElement(tokens)?;
+    Ok((rest.0, vec![rest.1]))
+}
+
+fn FormalParameterList(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    separated_nonempty_list!(tokens, is_token!(Token::Comma), FormalParameter)
+}
+
+fn FormalParameters4(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    let list = FormalParameterList(tokens)?;
+    let comma = is_token!(list.0, Token::Comma)?;
+
+    Ok((comma.0, list.1))
+}
+
+fn FormalParameters5(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Vec<Box<estree::Pattern>>> {
+    let mut list = FormalParameterList(tokens)?;
+    let comma = is_token!(list.0, Token::Comma)?;
+    let rest = BindingRestElement(tokens)?;
+    list.1.push(rest.1);
+
+    Ok((rest.0, list.1))
+}
+
+fn FormalParameter(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, Box<estree::Pattern>> {
+    BindingElement(tokens)
+}
 named!(pub Statement<Input<InputWrapper>, Box<estree::Statement>>, alt!(
     BlockStatement |
     VariableStatement |
@@ -162,14 +482,10 @@ fn LabeledStatement(
 
 named!(pub LabeledItem<Input<InputWrapper>, Box<estree::Statement>>, alt!(
     Statement |
-    FunctionDeclaration
+    do_parse!(
+        res: FunctionDeclaration >>
+        (res as Box<estree::Statement>))
 ));
-
-fn FunctionDeclaration(
-    tokens: Input<InputWrapper>,
-) -> IResult<Input<InputWrapper>, Box<estree::Statement>> {
-    Err(Err::Error(error_position!(tokens, ErrorKind::Custom(1))))
-}
 
 fn WithStatement(
     tokens: Input<InputWrapper>,
@@ -3208,6 +3524,293 @@ mod test {
         );
         if let estree::ProgramBody::ProgramStatement(ref stmt) = res.get_body()[0] {
             let stmt = stmt.downcast_ref::<node::DebuggerStatement>().unwrap();
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn function_declaration_simple() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"function a() {}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::FunctionDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name().clone(), "a");
+            assert_eq!(decl.params.len(), 0);
+            assert_eq!(decl.generator, false);
+            assert_eq!(decl.async_, false);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn function_declaration_simple_arg() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"function a(a, b) {}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::FunctionDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name().clone(), "a");
+            assert_eq!(decl.params.len(), 2);
+            assert_eq!(decl.generator, false);
+            assert_eq!(decl.async_, false);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn function_declaration_rest() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"function a(...b) {}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::FunctionDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "a");
+            assert_eq!(decl.params.len(), 1);
+            assert_eq!(decl.generator, false);
+            assert_eq!(decl.async_, false);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn class_declaration_simple() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn class_declaration_inheritance() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b extend a {}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(
+                decl.super_class
+                    .as_ref()
+                    .unwrap()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn method_declaration_simple() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {a() {}}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+            let body = decl.get_body().get_body();
+            assert_eq!(body.len(), 1);
+            assert_eq!(
+                body[0]
+                    .get_key()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+            assert_eq!(body[0].get_kind(), &estree::MethodDefinitionKind::Method);
+            assert_eq!(body[0].get_static(), false);
+            let value = body[0].get_value();
+            assert_eq!(value.get_params().len(), 0);
+            assert!(value.get_id().is_none());
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn method_declaration_params() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {a(b,c) {}}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+            let body = decl.get_body().get_body();
+            assert_eq!(body.len(), 1);
+            assert_eq!(
+                body[0]
+                    .get_key()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+            assert_eq!(body[0].get_kind(), &estree::MethodDefinitionKind::Method);
+            assert_eq!(body[0].get_static(), false);
+            let value = body[0].get_value();
+            assert_eq!(value.get_params().len(), 2);
+            assert!(value.get_id().is_none());
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn method_declaration_set() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {set a(b) {}}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+            let body = decl.get_body().get_body();
+            assert_eq!(body.len(), 1);
+            assert_eq!(
+                body[0]
+                    .get_key()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+            assert_eq!(body[0].get_kind(), &estree::MethodDefinitionKind::Set);
+            assert_eq!(body[0].get_static(), false);
+            let value = body[0].get_value();
+            assert_eq!(value.get_params().len(), 1);
+            assert!(value.get_id().is_none());
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn method_declaration_get() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {get a() {}}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+            let body = decl.get_body().get_body();
+            assert_eq!(body.len(), 1);
+            assert_eq!(
+                body[0]
+                    .get_key()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+            assert_eq!(body[0].get_kind(), &estree::MethodDefinitionKind::Get);
+            assert_eq!(body[0].get_static(), false);
+            let value = body[0].get_value();
+            assert_eq!(value.get_params().len(), 0);
+            assert!(value.get_id().is_none());
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn method_declaration_static() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"class b {static a() {}}"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::ClassDeclaration>().unwrap();
+            assert_eq!(decl.id.as_ref().unwrap().get_name(), "b");
+            assert_eq!(decl.super_class.is_none(), true);
+            let body = decl.get_body().get_body();
+            assert_eq!(body.len(), 1);
+            assert_eq!(
+                body[0]
+                    .get_key()
+                    .downcast_ref::<node::Identifier>()
+                    .unwrap()
+                    .get_name(),
+                "a"
+            );
+            assert_eq!(body[0].get_kind(), &estree::MethodDefinitionKind::Method);
+            assert_eq!(body[0].get_static(), true);
+            let value = body[0].get_value();
+            assert_eq!(value.get_params().len(), 0);
+            assert!(value.get_id().is_none());
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn lexical_declaration_let_simple() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"let a;"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::VariableDeclaration>().unwrap();
+            assert_eq!(decl.get_kind(), &estree::VariableDeclarationKind::Let);
+            let decls = decl.get_declarations();
+            assert_eq!(decls.len(), 1);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn lexical_declaration_const_init() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"const a = 1;"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::VariableDeclaration>().unwrap();
+            assert_eq!(decl.get_kind(), &estree::VariableDeclarationKind::Const);
+            let decls = decl.get_declarations();
+            assert_eq!(decls.len(), 1);
+        } else {
+            unreachable!();
+        }
+    }
+
+    #[test]
+    fn lexical_declaration_let_multiple() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens(r#"let a = 1, b = 2;"#).unwrap().1,
+            estree::ProgramSourceType::Script,
+        );
+        if let estree::ProgramBody::ProgramStatement(ref decl) = res.get_body()[0] {
+            let decl = decl.downcast_ref::<node::VariableDeclaration>().unwrap();
+            assert_eq!(decl.get_kind(), &estree::VariableDeclarationKind::Let);
+            let decls = decl.get_declarations();
+            assert_eq!(decls.len(), 2);
         } else {
             unreachable!();
         }

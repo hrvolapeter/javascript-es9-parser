@@ -161,7 +161,12 @@ impl estree::VariableDeclaration for VariableDeclaration {
     }
 }
 
-impl estree::Declaration for VariableDeclaration {}
+impl estree::Declaration for VariableDeclaration {
+    fn box_clone(&self) -> Box<estree::Declaration> {
+        box (*self).clone()
+    }
+}
+
 impl estree::Statement for VariableDeclaration {
     fn box_clone(&self) -> Box<estree::Statement> {
         box (*self).clone()
@@ -471,7 +476,7 @@ impl estree::Function for ArrowFunctionExpression {
         &self.params
     }
 
-    fn get_body(&self) -> &estree::FunctionBody {
+    fn get_body(&self) -> &Box<estree::FunctionBody> {
         unimplemented!();
     }
 
@@ -484,6 +489,63 @@ impl estree::Function for ArrowFunctionExpression {
     }
 }
 impl estree::Node for ArrowFunctionExpression {}
+
+#[derive(Debug)]
+pub struct FunctionExpression {
+    pub id: Option<Box<estree::Identifier>>,
+    pub params: Vec<Box<estree::Pattern>>,
+    pub body: Box<estree::FunctionBody>,
+    pub generator: bool,
+    pub async_: bool,
+}
+
+impl Clone for FunctionExpression {
+    fn clone(&self) -> Self {
+        Self {
+            id: self
+                .id
+                .as_ref()
+                .map(|i| estree::Identifier::box_clone(&**i)),
+            params: self.params.iter().map(|i| i.box_clone()).collect(),
+            body: estree::FunctionBody::box_clone(&*self.body),
+            generator: self.generator,
+            async_: self.async_,
+        }
+    }
+}
+
+impl estree::FunctionExpression for FunctionExpression {
+    fn box_clone(&self) -> Box<estree::FunctionExpression> {
+        box (*self).clone()
+    }
+}
+impl estree::Function for FunctionExpression {
+    fn get_id(&self) -> &Option<Box<estree::Identifier>> {
+        &self.id
+    }
+
+    fn get_params(&self) -> &Vec<Box<estree::Pattern>> {
+        &self.params
+    }
+
+    fn get_body(&self) -> &Box<estree::FunctionBody> {
+        &self.body
+    }
+
+    fn get_generator(&self) -> bool {
+        self.generator
+    }
+
+    fn get_async(&self) -> bool {
+        self.async_
+    }
+}
+impl estree::Expression for FunctionExpression {
+    fn box_clone(&self) -> Box<estree::Expression> {
+        box (*self).clone()
+    }
+}
+impl estree::Node for FunctionExpression {}
 
 #[derive(Debug)]
 pub struct FunctionBody {
@@ -1144,3 +1206,192 @@ impl estree::Statement for DebuggerStatement {
     }
 }
 impl estree::Node for DebuggerStatement {}
+
+#[derive(Debug)]
+pub struct FunctionDeclaration {
+    pub id: Option<Box<estree::Identifier>>,
+    pub params: Vec<Box<estree::Pattern>>,
+    pub body: Box<estree::FunctionBody>,
+    pub generator: bool,
+    pub async_: bool,
+}
+
+impl Clone for FunctionDeclaration {
+    fn clone(&self) -> Self {
+        Self {
+            id: self
+                .id
+                .as_ref()
+                .map(|i| estree::Identifier::box_clone(&**i)),
+            params: self.params.iter().map(|i| i.box_clone()).collect(),
+            body: estree::FunctionBody::box_clone(&*self.body),
+            generator: self.generator,
+            async_: self.async_,
+        }
+    }
+}
+
+impl estree::FunctionDeclaration for FunctionDeclaration {
+    fn get_id(&self) -> &Box<estree::Identifier> {
+        unimplemented!("should return correct id");
+    }
+}
+impl estree::Function for FunctionDeclaration {
+    fn get_id(&self) -> &Option<Box<estree::Identifier>> {
+        &self.id
+    }
+
+    fn get_params(&self) -> &Vec<Box<estree::Pattern>> {
+        &self.params
+    }
+
+    fn get_body(&self) -> &Box<estree::FunctionBody> {
+        &self.body
+    }
+
+    fn get_generator(&self) -> bool {
+        self.generator
+    }
+
+    fn get_async(&self) -> bool {
+        self.async_
+    }
+}
+impl estree::Declaration for FunctionDeclaration {
+    fn box_clone(&self) -> Box<estree::Declaration> {
+        box (*self).clone()
+    }
+}
+
+impl estree::Statement for FunctionDeclaration {
+    fn box_clone(&self) -> Box<estree::Statement> {
+        box (*self).clone()
+    }
+}
+impl estree::Node for FunctionDeclaration {}
+
+#[derive(Debug)]
+pub struct ClassDeclaration {
+    pub id: Option<Box<estree::Identifier>>,
+    pub super_class: Option<Box<estree::Expression>>,
+    pub body: Box<estree::ClassBody>,
+}
+
+impl Clone for ClassDeclaration {
+    fn clone(&self) -> Self {
+        Self {
+            id: self
+                .id
+                .as_ref()
+                .map(|i| estree::Identifier::box_clone(&**i)),
+            super_class: self
+                .super_class
+                .as_ref()
+                .map(|i| estree::Expression::box_clone(&**i)),
+            body: self.body.box_clone(),
+        }
+    }
+}
+
+impl estree::Class for ClassDeclaration {
+    fn get_id(&self) -> &Option<Box<estree::Identifier>> {
+        &self.id
+    }
+
+    fn get_super_class(&self) -> &Option<Box<estree::Expression>> {
+        &self.super_class
+    }
+
+    fn get_body(&self) -> &Box<estree::ClassBody> {
+        &self.body
+    }
+}
+
+impl estree::ClassDeclaration for ClassDeclaration {
+    fn get_id(&self) -> &Box<estree::Identifier> {
+        unimplemented!();
+    }
+}
+impl estree::Statement for ClassDeclaration {
+    fn box_clone(&self) -> Box<estree::Statement> {
+        box (*self).clone()
+    }
+}
+impl estree::Declaration for ClassDeclaration {
+    fn box_clone(&self) -> Box<estree::Declaration> {
+        box (*self).clone()
+    }
+}
+impl estree::Node for ClassDeclaration {}
+
+#[derive(Debug)]
+pub struct ClassBody {
+    pub body: Vec<Box<estree::MethodDefinition>>,
+}
+
+impl Clone for ClassBody {
+    fn clone(&self) -> Self {
+        Self {
+            body: self.body.iter().map(|p| p.box_clone()).collect(),
+        }
+    }
+}
+
+impl estree::ClassBody for ClassBody {
+    fn get_body(&self) -> &Vec<Box<estree::MethodDefinition>> {
+        &self.body
+    }
+
+    fn box_clone(&self) -> Box<estree::ClassBody> {
+        box (*self).clone()
+    }
+}
+impl estree::Node for ClassBody {}
+
+#[derive(Debug)]
+pub struct MethodDefinition {
+    pub key: Box<estree::Expression>,
+    pub value: Box<estree::FunctionExpression>,
+    pub kind: estree::MethodDefinitionKind,
+    pub computed: bool,
+    pub static_: bool,
+}
+
+impl Clone for MethodDefinition {
+    fn clone(&self) -> Self {
+        Self {
+            key: estree::Expression::box_clone(&*self.key),
+            value: estree::FunctionExpression::box_clone(&*self.value),
+            kind: self.kind,
+            computed: self.computed,
+            static_: self.static_,
+        }
+    }
+}
+
+impl estree::MethodDefinition for MethodDefinition {
+    fn get_key(&self) -> &Box<estree::Expression> {
+        &self.key
+    }
+
+    fn get_value(&self) -> &Box<estree::FunctionExpression> {
+        &self.value
+    }
+
+    fn get_kind(&self) -> &estree::MethodDefinitionKind {
+        &self.kind
+    }
+
+    fn get_computed(&self) -> bool {
+        self.computed
+    }
+
+    fn get_static(&self) -> bool {
+        self.static_
+    }
+
+    fn box_clone(&self) -> Box<estree::MethodDefinition> {
+        box (*self).clone()
+    }
+}
+impl estree::Node for MethodDefinition {}

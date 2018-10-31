@@ -57,7 +57,7 @@ pub enum ProgramBody {
 pub trait Function: Node {
     fn get_id(&self) -> &Option<Box<Identifier>>;
     fn get_params(&self) -> &Vec<Box<Pattern>>;
-    fn get_body(&self) -> &FunctionBody;
+    fn get_body(&self) -> &Box<FunctionBody>;
     fn get_generator(&self) -> bool;
     fn get_async(&self) -> bool;
 }
@@ -231,11 +231,13 @@ pub trait ForOfStatement: ForInStatement {
     fn get_await(&self) -> bool;
 }
 
-pub trait Declaration: Statement {}
+pub trait Declaration: Statement {
+    fn box_clone(&self) -> Box<Declaration>;
+}
 
 // Declarations
-trait FunctionDeclaration: Function + Declaration {
-    fn get_id(&self) -> &Identifier;
+pub trait FunctionDeclaration: Function + Declaration {
+    fn get_id(&self) -> &Box<Identifier>;
 }
 
 pub trait VariableDeclaration: Declaration {
@@ -320,7 +322,9 @@ pub trait Property: Node {
     fn box_clone(&self) -> Box<Property>;
 }
 
-trait FunctionExpression: Function + Expression {}
+pub trait FunctionExpression: Function + Expression {
+    fn box_clone(&self) -> Box<FunctionExpression>;
+}
 
 trait UnaryExpression: Expression {
     fn get_operator(&self) -> &UnaryOperator;
@@ -573,36 +577,42 @@ pub trait AssignmentPattern: Pattern {
     fn get_right(&self) -> &Box<Expression>;
 }
 
-trait Class: Node {
+pub trait Class: Node {
     fn get_id(&self) -> &Option<Box<Identifier>>;
     fn get_super_class(&self) -> &Option<Box<Expression>>;
     fn get_body(&self) -> &Box<ClassBody>;
 }
 
-trait ClassBody: Node {
+pub trait ClassBody: Node {
     fn get_body(&self) -> &Vec<Box<MethodDefinition>>;
+
+    fn box_clone(&self) -> Box<ClassBody>;
 }
 
-trait MethodDefinition: Node {
+pub trait MethodDefinition: Node {
     fn get_key(&self) -> &Box<Expression>;
     fn get_value(&self) -> &Box<FunctionExpression>;
     fn get_kind(&self) -> &MethodDefinitionKind;
     fn get_computed(&self) -> bool;
     fn get_static(&self) -> bool;
-}
 
-enum MethodDefinitionKind {
+    fn box_clone(&self) -> Box<MethodDefinition>;
+}
+mopafy!(MethodDefinition);
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum MethodDefinitionKind {
     Constructor,
     Method,
     Get,
     Set,
 }
 
-trait ClassDeclaration: Class + Declaration {
+pub trait ClassDeclaration: Class + Declaration {
     fn get_id(&self) -> &Box<Identifier>;
 }
 
-trait ClassExpression: Class + Expression {}
+pub trait ClassExpression: Class + Expression {}
 
 trait MetaProperty: Expression {
     fn get_meta(&self) -> &Box<Identifier>;

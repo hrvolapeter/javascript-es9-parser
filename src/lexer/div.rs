@@ -158,6 +158,10 @@ fn IdentifierName(input: CompleteStr) -> ParseResult {
         "catch" => Token::KCatch,
         "finally" => Token::KFinally,
         "debugger" => Token::KDebugger,
+        "extend" => Token::KExtend,
+        "static" => Token::KStatic,
+        "get" => Token::KGet,
+        "set" => Token::KSet,
         _ => Token::IdentifierName(String::from(ident)),
     };
     Ok((identifierRest.0, ident))
