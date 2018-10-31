@@ -148,6 +148,10 @@ pub enum Token {
     KCatch,
     KFinally,
     KDebugger,
+    KExtend,
+    KStatic,
+    KGet,
+    KSet,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
