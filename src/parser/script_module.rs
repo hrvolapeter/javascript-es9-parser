@@ -9,17 +9,17 @@ use crate::{
 };
 use nom::types::Input;
 
-pub fn parse_script(tokens: Vec<Token>, ty: ProgramSourceType) -> Box<estree::Program> {
+pub fn parse_script(tokens: Vec<Token>, ty: ProgramSourceType) -> node::Program {
     match ty {
-        ProgramSourceType::Script => Box::new(node::Program {
+        ProgramSourceType::Script => node::Program {
             sourceType: ty,
             body: parse_program(tokens),
-        }),
+        },
         _ => unimplemented!(),
     }
 }
 
-fn parse_program(tokens: Vec<Token>) -> Vec<estree::ProgramBody> {
+fn parse_program(tokens: Vec<Token>) -> Vec<node::ProgramBody> {
     let input = Input {
         inner: InputWrapper(&tokens),
         at_eof: true,

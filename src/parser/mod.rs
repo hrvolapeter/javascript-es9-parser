@@ -16,7 +16,7 @@ mod statement_declaration;
 pub struct Parser;
 
 impl Parser {
-    pub fn ast_tree(tokens: Vec<Token>, ty: ProgramSourceType) -> Box<estree::Program> {
+    pub fn ast_tree(tokens: Vec<Token>, ty: ProgramSourceType) -> node::Program {
         script_module::parse_script(tokens, ty)
     }
 }

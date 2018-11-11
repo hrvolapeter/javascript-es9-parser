@@ -162,6 +162,11 @@ fn IdentifierName(input: CompleteStr) -> ParseResult {
         "static" => Token::KStatic,
         "get" => Token::KGet,
         "set" => Token::KSet,
+        "this" => Token::KThis,
+        "delete" => Token::KDelete,
+        "void" => Token::KVoid,
+        "typeof" => Token::KTypeof,
+        "new" => Token::KNew,
         _ => Token::IdentifierName(String::from(ident)),
     };
     Ok((identifierRest.0, ident))
