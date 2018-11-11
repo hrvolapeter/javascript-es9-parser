@@ -152,6 +152,11 @@ pub enum Token {
     KStatic,
     KGet,
     KSet,
+    KThis,
+    KDelete,
+    KVoid,
+    KTypeof,
+    KNew,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]

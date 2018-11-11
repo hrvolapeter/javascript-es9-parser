@@ -1,7 +1,7 @@
 #![feature(rustc_private)]
 #![feature(box_patterns)]
 #![feature(box_syntax)]
-#![recursion_limit = "256"]
+#![recursion_limit = "512"]
 #![deny(warnings)]
 #![feature(try_from)]
 

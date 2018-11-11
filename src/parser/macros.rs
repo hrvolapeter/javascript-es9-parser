@@ -17,3 +17,23 @@ macro_rules! is_token (
     }
   );
 );
+
+#[macro_export]
+macro_rules! test (
+  ($id: ident, $code:expr, $block: expr, $decl: ident) => (
+    #[test]
+    fn $id() {
+        let res = Parser::ast_tree(
+            Lexer::lex_tokens($code)
+                .unwrap()
+                .1,
+            estree::ProgramSourceType::Script,
+        );
+        if let node::ProgramBody::ProgramStatement(ref $decl) = res.get_body()[0] {
+            $block
+        } else {
+            unreachable!();
+        }
+    }
+  );
+);
