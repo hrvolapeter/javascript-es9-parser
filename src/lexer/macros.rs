@@ -1,4 +1,3 @@
-#[macro_export]
 macro_rules! named_js {
     ($name: ident: $($rest:tt)*) => {
         named!(pub $name<CompleteStr, Token>, alt_longest!(
@@ -7,7 +6,6 @@ macro_rules! named_js {
     };
 }
 
-#[macro_export]
 macro_rules! named_token {
     ($name: ident, $expr: expr, $type: expr) => {
         named!($name<CompleteStr, Token>,
@@ -17,100 +15,11 @@ macro_rules! named_token {
 
 }
 
-#[macro_export]
-macro_rules! should {
-    ($name:ident, $left:expr, $right:expr) => {
-        #[cfg(test)]
-        #[test]
-        fn $name() {
-            use crate::lexer::Lexer;
-
-            let input = &$left[..];
-            let (unparsed, result) = Lexer::lex_tokens(input).unwrap();
-
-            let expected_results = $right;
-            assert_eq!(
-                unparsed,
-                CompleteStr(&""[..]),
-                "Input was not parsed completly, unparsed: {}",
-                unparsed
-            );
-            assert_eq!(result, expected_results);
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! should_ignore {
-    ($name:ident, $left:expr, $right:expr) => {
-        #[cfg(test)]
-        #[test]
-        #[ignore]
-        fn $name() {
-            use crate::lexer::Lexer;
-
-            let input = &$left[..];
-            let (unparsed, result) = Lexer::lex_tokens(input).unwrap();
-
-            let expected_results = $right;
-            assert_eq!(
-                unparsed,
-                CompleteStr(&""[..]),
-                "Input was not parsed completly, unparsed: {}",
-                unparsed
-            );
-            assert_eq!(result, expected_results);
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! should_fail {
-    ($name:ident, $left:expr, $right:expr) => {
-        #[cfg(test)]
-        #[test]
-        #[should_panic]
-        fn $name() {
-            use crate::lexer::Lexer;
-
-            let input = &$left[..];
-            let (unparsed, result) = Lexer::lex_tokens(input).unwrap();
-
-            let expected_results = $right;
-            assert_eq!(
-                unparsed,
-                CompleteStr(&""[..]),
-                "Input was not parsed completly, unparsed: {}",
-                unparsed
-            );
-            assert_eq!(result, expected_results);
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! should_incomplete {
-    ($name:ident, $left:expr) => {
-        #[cfg(test)]
-        #[test]
-        #[should_panic]
-        fn $name() {
-            use crate::lexer::Lexer;
-
-            let input = &$left[..];
-            let (unparsed, _result) = Lexer::lex_tokens(input).unwrap();
-
-            assert_eq!(
-                unparsed.len(),
-                0,
-                "Input was not parsed completly, unparsed: {}",
-                unparsed
-            );
-        }
-    };
-}
-
-#[macro_export]
+/// similar to nom's `alt` macro but tries all options and choses the one that
+/// consumed the most
+/// that means it's painfully slow 😢. This could be replaced by manually
+/// ordering rules and making sure that they are sorted by how much input they
+/// can consume.
 macro_rules! alt_longest {
   (__impl $i:expr, $e:path, $($rest:tt)* ) => (
     alt_longest!(__impl $i, call!($e) , $($rest)*);
@@ -171,7 +80,6 @@ macro_rules! alt_longest {
   );
 }
 
-#[macro_export]
 macro_rules! named_token_unicode {
     ($name:ident, $expr:expr, $type:expr) => {
         #[inline]
@@ -183,6 +91,66 @@ macro_rules! named_token_unicode {
                 }
             }
             Err(Err::Error(Context::Code(input, ErrorKind::Tag)))
+        }
+    };
+}
+
+macro_rules! should {
+    ($name:ident, $left:expr, $right:expr) => {
+        #[cfg(test)]
+        #[test]
+        fn $name() {
+            use crate::lexer::Lexer;
+
+            let input = &$left[..];
+            let result = Lexer::lex_tokens(input).unwrap();
+            assert_eq!(result, $right);
+        }
+    };
+}
+
+macro_rules! should_ignore {
+    ($name:ident, $left:expr, $right:expr) => {
+        #[cfg(test)]
+        #[test]
+        #[ignore]
+        fn $name() {
+            use crate::lexer::Lexer;
+
+            let input = &$left[..];
+            let result = Lexer::lex_tokens(input).unwrap();
+            assert_eq!(result, $right);
+        }
+    };
+}
+
+macro_rules! should_fail {
+    ($name:ident, $left:expr, $right:expr) => {
+        #[cfg(test)]
+        #[test]
+        #[should_panic]
+        fn $name() {
+            use crate::lexer::Lexer;
+
+            let input = &$left[..];
+            let result = Lexer::lex_tokens(input).unwrap();
+
+            let expected_results = $right;
+            assert_eq!(result, expected_results);
+        }
+    };
+}
+
+macro_rules! should_incomplete {
+    ($name:ident, $left:expr) => {
+        #[cfg(test)]
+        #[test]
+        #[should_panic]
+        fn $name() {
+            use crate::lexer::Lexer;
+
+            let input = &$left[..];
+            Lexer::lex_tokens(input).unwrap();
         }
     };
 }

@@ -1,3 +1,37 @@
+//! For transforming inpu to `Token`s we use nom library. Using `alt` macro we
+//! define that grammar rule has multiple results. Parsing starts with first
+//! rule and returns as soon as first of the rules
+//! succeeds.
+//!
+//! For terminals e.g. `a` we use handwritten functions that parse all
+//! necessesary information and create leaf node. For rules that containing
+//! conjuction e.g. `Ba` we use
+//! function that first calls
+//! parser `B` and if it succeeds then parses terminal.
+//!
+//! Grammar rule might look like S -> A | Ba
+//! This can be written using macros as:
+//! named!(pub S<InputT, OutputT>, alt!(
+//!     A | ba_function
+//! )
+//!
+//! fn ba_function(i: InputT) -> IResult<InputT, OutputT> {
+//!     let result = B()?;
+//!     is_token!(result.0, 'a')?;
+//!     Ok()
+//! }
+//!
+//! Every rule (parser in nom terminology) either suceeds and returns resulting
+//! input, input without consumed part, and leaf node. If parser returns error
+//! nom test another rule if it succeeds. This can cause truble if we input
+//! grammar is not determenistic. Let's
+//! have input `aa` and two rules S -> a | aa. Nom parser will use first rule
+//! two times. This also happens when parsing JS.
+//! Grammar specifiec in ECMAScript is not determenistic and requires to use
+//! rule that consumes most of the input. For this case we
+//! have special macro `alt_longest` that tries all options and uses the one
+//! that consumes most of the input.
+//!
 use crate::lexer::{
     token::{self, HexDigit, HexDigits, Number, Token},
     ParseResult,
@@ -49,11 +83,11 @@ named_js!(LineTerminator: LF | CR | LS | PS);
 should!(
     lineterminator_all,
     "\u{000A}\u{000D}\u{2028}\u{2029}",
-    vec![Token::LF, Token::CR, Token::LS, Token::PS, Token::EOF]
+    vec![Token::CR, Token::LS, Token::PS, Token::EOF]
 );
 
 named_token_unicode!(LF, 0x000A, Token::LF);
-should!(lineterminator_lf, "\u{000A}", vec![Token::LF, Token::EOF]);
+should!(lineterminator_lf, "\u{000A}", vec![Token::EOF]);
 
 named_token_unicode!(CR, 0x000D, Token::CR);
 should!(lineterminator_cr, "\u{000D}", vec![Token::CR, Token::EOF]);
@@ -68,12 +102,12 @@ named_js!(Comment: MultiLineComment | SingleLineComment);
 should!(
     comment_multiline_singleline,
     "/* aa */\n // adwada",
-    vec![Token::LF, Token::EOF]
+    vec![Token::EOF]
 );
 should!(
     comment_multiline_singleline_multiline,
     "/* aa */\n // adwada \n /* aa */",
-    vec![Token::LF, Token::LF, Token::EOF]
+    vec![Token::EOF]
 );
 
 named_js!(
@@ -808,11 +842,7 @@ should!(
     string_literal_21,
     r#""number\na"
 "#,
-    vec![
-        Token::StringLiteral(String::from("number\na")),
-        Token::LF,
-        Token::EOF
-    ]
+    vec![Token::StringLiteral(String::from("number\na")), Token::EOF]
 );
 
 #[inline]
