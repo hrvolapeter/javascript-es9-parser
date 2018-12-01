@@ -1,7 +1,12 @@
+//! This file contains definition of AST structures. Structures are grouped to
+//! enums by their semantic value. Most important enums are: Expression,
+//! Statement, Node, Literal, Declaration. Same
+//! node can be contained in multiple enums.
+//!
+//! Every node implements it's trait from ESTree standart.
 use crate::{lexer::token::Number, parser::estree};
-use std::convert::TryFrom;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
@@ -24,10 +29,37 @@ pub enum Expression {
     NewExpression(NewExpression),
 }
 
+// Allow easy conversion between the same types in different enums
+impl Into<Node> for Expression {
+    fn into(self) -> Node {
+        match self {
+            Expression::StringLiteral(expr) => Node::StringLiteral(expr),
+            Expression::BooleanLiteral(expr) => Node::BooleanLiteral(expr),
+            Expression::NullLiteral(expr) => Node::NullLiteral(expr),
+            Expression::NumberLiteral(expr) => Node::NumberLiteral(expr),
+            Expression::Regex(expr) => Node::Regex(expr),
+            Expression::Identifier(expr) => Node::Identifier(expr),
+            Expression::ObjectExpression(expr) => Node::ObjectExpression(expr),
+            Expression::ArrowFunctionExpression(expr) => Node::ArrowFunctionExpression(expr),
+            Expression::FunctionExpression(expr) => Node::FunctionExpression(expr),
+            Expression::AssignmentExpression(expr) => Node::AssignmentExpression(expr),
+            Expression::ExpressionStatement(expr) => Node::ExpressionStatement(expr),
+            Expression::SequenceExpression(expr) => Node::SequenceExpression(expr),
+            Expression::ThisExpression(expr) => Node::ThisExpression(expr),
+            Expression::ArrayExpression(expr) => Node::ArrayExpression(expr),
+            Expression::LogicalExpression(expr) => Node::LogicalExpression(expr),
+            Expression::BinaryExpression(expr) => Node::BinaryExpression(expr),
+            Expression::UnaryExpression(expr) => Node::UnaryExpression(expr),
+            Expression::UpdateExpression(expr) => Node::UpdateExpression(expr),
+            Expression::NewExpression(expr) => Node::NewExpression(expr),
+        }
+    }
+}
+
 impl estree::Expression for Expression {}
 impl estree::Node for Expression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
@@ -35,6 +67,7 @@ pub enum Node {
     NumberLiteral(NumberLiteral),
     Regex(Regex),
     VariableDeclarator(VariableDeclarator),
+    ArrayPattern(ArrayPattern),
     ObjectPattern(ObjectPattern),
     Identifier(Identifier),
     ObjectExpression(ObjectExpression),
@@ -82,7 +115,7 @@ pub enum Node {
 
 impl estree::Node for Node {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
@@ -91,7 +124,7 @@ pub enum Literal {
     Regex(Regex),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Declaration {
     VariableDeclaration(VariableDeclaration),
     FunctionDeclaration(FunctionDeclaration),
@@ -108,7 +141,7 @@ impl From<Declaration> for Statement {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     VariableDeclaration(VariableDeclaration),
     BlockStatement(BlockStatement),
@@ -139,7 +172,7 @@ impl estree::Statement for Statement {}
 
 impl estree::Node for Statement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Pattern {
     ObjectPattern(ObjectPattern),
     ArrayPattern(ArrayPattern),
@@ -148,11 +181,26 @@ pub enum Pattern {
     AssignmentPattern(AssignmentPattern),
 }
 
+impl Into<Node> for Pattern {
+    fn into(self) -> Node {
+        match self {
+            Pattern::ObjectPattern(pat) => Node::ObjectPattern(pat),
+            Pattern::ArrayPattern(pat) => Node::ArrayPattern(pat),
+            Pattern::Identifier(pat) => Node::Identifier(pat),
+            Pattern::RestElement(pat) => Node::RestElement(pat),
+            Pattern::AssignmentPattern(pat) => Node::AssignmentPattern(pat),
+        }
+    }
+}
+
+/// In some cases we should allow conversion between similar terminals
+/// E.g. ArrayExpression can be converted to ArrayPattern if it doesn't contain
+/// literal. This is required in some static semantic rules
 impl From<Expression> for Pattern {
     fn from(pat: Expression) -> Self {
         match pat {
             Expression::Identifier(pat) => Pattern::Identifier(pat),
-            _ => unreachable!(),
+            u @ _ => unreachable!("Can't convert to pattern {:?}", u),
         }
     }
 }
@@ -161,55 +209,55 @@ impl estree::Pattern for Pattern {}
 
 impl estree::Node for Pattern {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Property {
     AssignmentProperty(AssignmentProperty),
     Property(property),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Class {
     ClassDeclaration(ClassDeclaration),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Function {
     ArrowFunctionExpression(ArrowFunctionExpression),
     FunctionExpression(FunctionExpression),
     FunctionDeclaration(FunctionDeclaration),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StringLiteral(pub String);
 impl estree::Literal for StringLiteral {}
 impl estree::Node for StringLiteral {}
 impl estree::Expression for StringLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BooleanLiteral(pub bool);
 impl estree::Literal for BooleanLiteral {}
 impl estree::Node for BooleanLiteral {}
 impl estree::Expression for BooleanLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NullLiteral;
 impl estree::Literal for NullLiteral {}
 impl estree::Node for NullLiteral {}
 impl estree::Expression for NullLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NumberLiteral(pub Number);
 impl estree::Literal for NumberLiteral {}
 impl estree::Node for NumberLiteral {}
 impl estree::Expression for NumberLiteral {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Regex {}
 impl estree::Literal for Regex {}
 impl estree::Node for Regex {}
 impl estree::Expression for Regex {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Program {
     pub sourceType: estree::ProgramSourceType,
     pub body: Vec<ProgramBody>,
@@ -227,13 +275,13 @@ impl estree::Program for Program {
 
 impl estree::Node for Program {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ProgramBody {
     ProgramDirective,
     ProgramStatement(Statement),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclarator {
     pub id: Pattern,
     pub init: Option<Expression>,
@@ -250,7 +298,7 @@ impl estree::VariableDeclarator for VariableDeclarator {
 }
 impl estree::Node for VariableDeclarator {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclaration {
     pub kind: estree::VariableDeclarationKind,
     pub declarations: Vec<VariableDeclarator>,
@@ -271,13 +319,13 @@ impl estree::Declaration for VariableDeclaration {}
 impl estree::Statement for VariableDeclaration {}
 impl estree::Node for VariableDeclaration {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ObjectPatternProperty {
     AssignmentProperty(AssignmentProperty),
     RestElement(RestElement),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ObjectPattern {
     pub properties: Vec<ObjectPatternProperty>,
 }
@@ -290,7 +338,7 @@ impl estree::ObjectPattern for ObjectPattern {
 impl estree::Pattern for ObjectPattern {}
 impl estree::Node for ObjectPattern {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArrayPattern {
     pub elements: Vec<Option<Pattern>>,
 }
@@ -303,7 +351,7 @@ impl estree::ArrayPattern for ArrayPattern {
 impl estree::Pattern for ArrayPattern {}
 impl estree::Node for ArrayPattern {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Identifier {
     pub name: String,
 }
@@ -323,13 +371,13 @@ impl From<String> for Identifier {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ObjectExpressionProperty {
     Property(property),
     SpreadElement(SpreadElement),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ObjectExpression {
     pub properties: Vec<ObjectExpressionProperty>,
 }
@@ -342,7 +390,7 @@ impl estree::ObjectExpression for ObjectExpression {
 impl estree::Node for ObjectExpression {}
 impl estree::Expression for ObjectExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RestElement {
     pub argument: Box<Pattern>,
 }
@@ -355,7 +403,7 @@ impl estree::RestElement for RestElement {
 impl estree::Pattern for RestElement {}
 impl estree::Node for RestElement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AssignmentProperty {
     pub key: Expression,
     pub value: Pattern,
@@ -395,7 +443,7 @@ impl estree::Property for AssignmentProperty {
 }
 impl estree::Node for AssignmentProperty {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AssignmentPattern {
     pub left: Box<Pattern>,
     pub right: Box<Expression>,
@@ -413,7 +461,7 @@ impl estree::AssignmentPattern for AssignmentPattern {
 impl estree::Pattern for AssignmentPattern {}
 impl estree::Node for AssignmentPattern {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockStatement {
     pub body: Vec<Statement>,
 }
@@ -426,20 +474,20 @@ impl estree::BlockStatement for BlockStatement {
 impl estree::Statement for BlockStatement {}
 impl estree::Node for BlockStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EmptyStatement {}
 
 impl estree::EmptyStatement for EmptyStatement {}
 impl estree::Statement for EmptyStatement {}
 impl estree::Node for EmptyStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ArrowFunctionExpressionBody {
     FunctionBody(FunctionBody),
     Expression(Box<Expression>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArrowFunctionExpression {
     pub body: ArrowFunctionExpressionBody,
     pub expression: bool,
@@ -482,7 +530,7 @@ impl estree::Function for ArrowFunctionExpression {
 }
 impl estree::Node for ArrowFunctionExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionExpression {
     pub id: Option<Identifier>,
     pub params: Vec<Pattern>,
@@ -516,13 +564,13 @@ impl estree::Function for FunctionExpression {
 impl estree::Expression for FunctionExpression {}
 impl estree::Node for FunctionExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FunctionBodyEnum {
     // Directive(Directive),
     Statement(Statement),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionBody {
     pub body: Vec<FunctionBodyEnum>,
 }
@@ -540,7 +588,7 @@ impl estree::BlockStatement for FunctionBody {
 impl estree::Statement for FunctionBody {}
 impl estree::Node for FunctionBody {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AssignmentExpression {
     pub operator: estree::AssignmentOperator,
     pub left: Box<Pattern>,
@@ -563,7 +611,7 @@ impl estree::AssignmentExpression for AssignmentExpression {
 impl estree::Expression for AssignmentExpression {}
 impl estree::Node for AssignmentExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IfStatement {
     pub test: Expression,
     pub consequent: Box<Statement>,
@@ -586,7 +634,7 @@ impl estree::IfStatement for IfStatement {
 impl estree::Statement for IfStatement {}
 impl estree::Node for IfStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExpressionStatement {
     pub expression: Box<Expression>,
 }
@@ -599,7 +647,7 @@ impl estree::ExpressionStatement for ExpressionStatement {
 impl estree::Statement for ExpressionStatement {}
 impl estree::Node for ExpressionStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SequenceExpression {
     pub expressions: Vec<Expression>,
 }
@@ -612,7 +660,7 @@ impl estree::SequenceExpression for SequenceExpression {
 impl estree::Expression for SequenceExpression {}
 impl estree::Node for SequenceExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DoWhileStatement {
     pub body: Box<Statement>,
     pub test: Box<Expression>,
@@ -630,7 +678,7 @@ impl estree::DoWhileStatement for DoWhileStatement {
 impl estree::Statement for DoWhileStatement {}
 impl estree::Node for DoWhileStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WhileStatement {
     pub test: Expression,
     pub body: Box<Statement>,
@@ -648,13 +696,13 @@ impl estree::WhileStatement for WhileStatement {
 impl estree::Statement for WhileStatement {}
 impl estree::Node for WhileStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ForStatementInit {
     VariableDeclaration(VariableDeclaration),
     Expression(Expression),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ForStatement {
     pub init: Option<ForStatementInit>,
     pub test: Option<Expression>,
@@ -682,13 +730,13 @@ impl estree::ForStatement for ForStatement {
 impl estree::Statement for ForStatement {}
 impl estree::Node for ForStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ForInStatementLeft {
     VariableDeclaration(VariableDeclaration),
     Pattern(Pattern),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ForInStatement {
     pub left: ForInStatementLeft,
     pub right: Expression,
@@ -712,7 +760,7 @@ impl estree::ForInStatement for ForInStatement {
 impl estree::Statement for ForInStatement {}
 impl estree::Node for ForInStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ForOfStatement {
     pub left: ForInStatementLeft,
     pub right: Expression,
@@ -743,7 +791,7 @@ impl estree::ForInStatement for ForOfStatement {
 impl estree::Statement for ForOfStatement {}
 impl estree::Node for ForOfStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SwitchStatement {
     pub discriminant: Expression,
     pub case: Vec<SwitchCase>,
@@ -761,7 +809,7 @@ impl estree::SwitchStatement for SwitchStatement {
 impl estree::Statement for SwitchStatement {}
 impl estree::Node for SwitchStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SwitchCase {
     pub test: Option<Expression>,
     pub consequent: Vec<Statement>,
@@ -778,7 +826,7 @@ impl estree::SwitchCase for SwitchCase {
 }
 impl estree::Node for SwitchCase {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ContinueStatement {
     pub label: Option<Identifier>,
 }
@@ -791,7 +839,7 @@ impl estree::ContinueStatement for ContinueStatement {
 impl estree::Statement for ContinueStatement {}
 impl estree::Node for ContinueStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BreakStatement {
     pub label: Option<Identifier>,
 }
@@ -804,7 +852,7 @@ impl estree::BreakStatement for BreakStatement {
 impl estree::Statement for BreakStatement {}
 impl estree::Node for BreakStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReturnStatement {
     pub argument: Option<Expression>,
 }
@@ -817,7 +865,7 @@ impl estree::ReturnStatement for ReturnStatement {
 impl estree::Statement for ReturnStatement {}
 impl estree::Node for ReturnStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct WithStatement {
     pub object: Expression,
     pub body: Box<Statement>,
@@ -835,7 +883,7 @@ impl estree::WithStatement for WithStatement {
 impl estree::Statement for WithStatement {}
 impl estree::Node for WithStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LabeledStatement {
     pub label: Identifier,
     pub body: Box<Statement>,
@@ -853,7 +901,7 @@ impl estree::LabeledStatement for LabeledStatement {
 impl estree::Statement for LabeledStatement {}
 impl estree::Node for LabeledStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ThrowStatement {
     pub argument: Expression,
 }
@@ -866,7 +914,7 @@ impl estree::ThrowStatement for ThrowStatement {
 impl estree::Statement for ThrowStatement {}
 impl estree::Node for ThrowStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TryStatement {
     pub block: BlockStatement,
     pub handler: Option<CatchClause>,
@@ -889,7 +937,7 @@ impl estree::TryStatement for TryStatement {
 impl estree::Statement for TryStatement {}
 impl estree::Node for TryStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CatchClause {
     pub param: Pattern,
     pub body: BlockStatement,
@@ -906,14 +954,14 @@ impl estree::CatchClause for CatchClause {
 }
 impl estree::Node for CatchClause {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DebuggerStatement {}
 
 impl estree::DebuggerStatement for DebuggerStatement {}
 impl estree::Statement for DebuggerStatement {}
 impl estree::Node for DebuggerStatement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionDeclaration {
     pub id: Option<Identifier>,
     pub params: Vec<Pattern>,
@@ -953,7 +1001,7 @@ impl estree::Declaration for FunctionDeclaration {}
 impl estree::Statement for FunctionDeclaration {}
 impl estree::Node for FunctionDeclaration {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ClassDeclaration {
     pub id: Option<Identifier>,
     pub super_class: Option<Expression>,
@@ -983,7 +1031,7 @@ impl estree::Statement for ClassDeclaration {}
 impl estree::Declaration for ClassDeclaration {}
 impl estree::Node for ClassDeclaration {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ClassBody {
     pub body: Vec<MethodDefinition>,
 }
@@ -995,7 +1043,7 @@ impl estree::ClassBody for ClassBody {
 }
 impl estree::Node for ClassBody {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MethodDefinition {
     pub key: Expression,
     pub value: FunctionExpression,
@@ -1027,19 +1075,19 @@ impl estree::MethodDefinition for MethodDefinition {
 }
 impl estree::Node for MethodDefinition {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ThisExpression {}
 impl estree::ThisExpression for ThisExpression {}
 impl estree::Expression for ThisExpression {}
 impl estree::Node for ThisExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ArrayExpressionElement {
     Expression(Expression),
     SpreadElement(SpreadElement),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArrayExpression {
     pub elements: Vec<Option<ArrayExpressionElement>>,
 }
@@ -1051,7 +1099,7 @@ impl estree::ArrayExpression for ArrayExpression {
 impl estree::Expression for ArrayExpression {}
 impl estree::Node for ArrayExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SpreadElement {
     pub argument: Expression,
 }
@@ -1063,7 +1111,7 @@ impl estree::SpreadElement for SpreadElement {
 }
 impl estree::Node for SpreadElement {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct property {
     pub key: Expression,
     pub value: Expression,
@@ -1100,7 +1148,7 @@ impl estree::Property for property {
 }
 impl estree::Node for property {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LogicalExpression {
     pub operator: estree::LogicalOperator,
     pub left: Box<Expression>,
@@ -1122,7 +1170,7 @@ impl estree::LogicalExpression for LogicalExpression {
 impl estree::Node for LogicalExpression {}
 impl estree::Expression for LogicalExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BinaryExpression {
     pub operator: estree::BinaryOperator,
     pub left: Box<Expression>,
@@ -1145,7 +1193,7 @@ impl estree::BinaryExpression for BinaryExpression {
 impl estree::Node for BinaryExpression {}
 impl estree::Expression for BinaryExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpression {
     pub operator: estree::UnaryOperator,
     pub prefix: bool,
@@ -1167,7 +1215,7 @@ impl estree::UnaryExpression for UnaryExpression {
 impl estree::Expression for UnaryExpression {}
 impl estree::Node for UnaryExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UpdateExpression {
     pub operator: estree::UpdateOperator,
     pub argument: Box<Expression>,
@@ -1190,7 +1238,7 @@ impl estree::UpdateExpression for UpdateExpression {
 impl estree::Expression for UpdateExpression {}
 impl estree::Node for UpdateExpression {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct NewExpression {
     pub callee: Box<Expression>,
     pub arguments: Vec<estree::NewExpressionArgument>,
@@ -1207,7 +1255,7 @@ impl estree::NewExpression for NewExpression {
 impl estree::Expression for NewExpression {}
 impl estree::Node for NewExpression {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Super {}
 impl estree::Super for Super {}
 impl estree::Node for Super {}

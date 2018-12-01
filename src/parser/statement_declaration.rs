@@ -1,10 +1,19 @@
+//! Statement declartion implements transformation of tokens to AST.
+//! During transformation all tokens must be consumed and create one AST.
+//!
+//! For transforming tokens to AST we use nom library. Using `alt` macro we
+//! define that grammar rule has multiple results. Parsing starts with first
+//! rule and returns as soon as first of the rules
+//! succeeds.
+
 use crate::{
     lexer::token::Token,
-    parser::{estree, input_wrapper::InputWrapper, node},
+    parser::{
+        estree,
+        input_wrapper::InputWrapper,
+        node::{self, Expression, Pattern, Statement},
+    },
 };
-// Needed because of bug in compiler, which can't star import structs that use
-// derive
-use crate::parser::node::{Expression, Pattern, Statement};
 use nom::{
     types::{Input, *},
     IResult, *,
@@ -1690,19 +1699,19 @@ fn Initializer(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node
 }
 
 named!(pub AssignmentExpression<Input<InputWrapper>, node::Expression>, alt!(
-    ConditionalExpression |
     /* YieldExpression |*/
     ArrowFunction |
     /* AsyncArrowFunction |*/
+    AssignmentExpression2 |
     AssignmentExpression1 |
-    AssignmentExpression2
+    ConditionalExpression
 ));
 
 fn AssignmentExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let left = LeftHandSideExpression(tokens)?;
-    let eq = is_token!(left.0, Token::Equal)?;
+    let eq = is_token!(left.0, Token::Assign)?;
     let right = AssignmentExpression(eq.0)?;
 
     Ok((

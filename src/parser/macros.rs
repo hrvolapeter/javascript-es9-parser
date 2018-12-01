@@ -1,4 +1,4 @@
-#[macro_export]
+/// Parsing one token by it's name
 macro_rules! is_token (
   ($i:expr, $tag: path) => (
     {
@@ -18,15 +18,13 @@ macro_rules! is_token (
   );
 );
 
-#[macro_export]
 macro_rules! test (
   ($id: ident, $code:expr, $block: expr, $decl: ident) => (
     #[test]
     fn $id() {
         let res = Parser::ast_tree(
             Lexer::lex_tokens($code)
-                .unwrap()
-                .1,
+                .unwrap(),
             estree::ProgramSourceType::Script,
         );
         if let node::ProgramBody::ProgramStatement(ref $decl) = res.get_body()[0] {

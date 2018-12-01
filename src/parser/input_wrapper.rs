@@ -1,3 +1,4 @@
+/// Custom implementation of nom input that works with our custom type `Token`
 use crate::lexer::token::Token;
 use nom::{InputIter, InputLength, InputTake};
 use std::{

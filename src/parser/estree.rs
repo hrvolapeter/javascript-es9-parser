@@ -1,11 +1,9 @@
-use crate::{lexer, parser::node};
-use mopa;
 /// AST tree interfaces as specified in ESTree standart
 /// https://github.com/estree/estree/
+use crate::{lexer, parser::node};
 use std::fmt::Debug;
 
-pub trait Node: Debug + mopa::Any {}
-mopafy!(Node);
+pub trait Node: Debug {}
 
 struct SourceLocation {
     source: Option<String>,
@@ -55,8 +53,6 @@ pub trait Function: Node {
 }
 
 pub trait Statement: Node {}
-mopafy!(Statement);
-
 pub trait ExpressionStatement: Statement {
     fn get_expression(&self) -> &Expression;
 }
@@ -195,7 +191,6 @@ pub trait VariableDeclarator: Node {
 }
 
 pub trait Expression: Node {}
-mopafy!(Expression);
 
 pub trait ThisExpression: Expression {}
 
@@ -285,7 +280,7 @@ pub trait AssignmentExpression: Expression {
     fn get_right(&self) -> &Expression;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AssignmentOperator {
     Equal,
     PlusEqual,
@@ -351,7 +346,7 @@ pub trait NewExpression: Expression {
     fn get_arguments(&self) -> &Vec<NewExpressionArgument>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NewExpressionArgument {
     Expression(Box<node::Expression>),
     Super(Box<node::Super>),
@@ -362,7 +357,6 @@ pub trait SequenceExpression: Expression {
 }
 
 pub trait Pattern: Node {}
-mopafy!(Pattern);
 
 pub trait Super: Node {}
 
@@ -409,7 +403,7 @@ pub trait AssignmentProperty: Property {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PropertyKind {
     Init,
 }
@@ -448,7 +442,6 @@ pub trait MethodDefinition: Node {
     fn get_computed(&self) -> bool;
     fn get_static(&self) -> bool;
 }
-mopafy!(MethodDefinition);
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum MethodDefinitionKind {
