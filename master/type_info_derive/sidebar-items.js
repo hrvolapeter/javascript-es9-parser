@@ -1,0 +1,1 @@
+initSidebarItems({"derive":[["TypeInfo","Derive the `TypeInfo` and `DynamicTypeInfo` traits for a given type."]]});

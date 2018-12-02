@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["estree",""],["node","This file contains definition of AST structures. Structures are grouped to enums by their semantic value. Most important enums are: Expression, Statement, Node, Literal, Declaration. Same node can be contained in multiple enums."]],"struct":[["Parser",""]]});

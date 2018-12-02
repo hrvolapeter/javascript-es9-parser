@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `js_parser` crate."><meta name="keywords" content="rust, rustlang, rust-lang, js_parser"><title>js_parser - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><p class='location'>Crate js_parser</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all js_parser's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'js_parser', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/js_parser/lib.rs.html#1-62' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>js_parser</a></span></h1><div class='docblock'><p>Javascript parser with aim to fully support <a href="http://www.ecma-international.org/ecma-262/9.0/index.html#sec-automatic-semicolon-insertion">Ecma script 2019</a>
+and <a href="https://github.com/estree/estree">Estree API</a>. One of the core values of project is to represent ECMAScript standart as close as possible,
+which should improve redability and maintainability of the code.</p>
+<p>This project is still a work in progress.</p>
+<p>Project is organized in two parts:</p>
+<ul>
+<li><a href="../js_parser/lexer/index.html">lexer</a></li>
+<li><a href="../js_parser/parser/index.html">parser</a></li>
+</ul>
+<p>Lexer carries out transformation of input to linear stream of tokens. Rules
+for lexer closely resemble <a href="http://www.ecma-international.org/ecma-262/9.0/index.html#sec-lexical-grammar">Lexical grammar in ESCMAScript</a>.
+Lexer transform n letters of input to exactly 1 token. This allows better
+speed optimization due to no dynamic memory allocation.</p>
+<p>To convert string to stream of tokens we can use code simillar to this</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">js_parser</span>::<span class="ident">lexer</span>::<span class="ident">Lexer</span>;
+
+<span class="kw">static</span> <span class="ident">JS</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">r#&quot;
+class A extend B {
+    get a() {}
+}
+&quot;#</span>;
+
+<span class="kw">let</span> <span class="ident">tokens</span> <span class="op">=</span> <span class="ident">Lexer</span>::<span class="ident">lex_tokens</span>(<span class="ident">JS</span>).<span class="ident">unwrap</span>();</pre></div>
+<p>Parser constructs Abstract syntax tree (AST) from token stream and then
+checks AST for violation of static semantics rules. Namely <em>Early errors</em>
+which have to be reported before evaluation.</p>
+<p>Construct AST from token stream</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="kw">use</span> <span class="ident">js_parser</span>::{
+    <span class="ident">lexer</span>::<span class="ident">Lexer</span>,
+    <span class="ident">parser</span>::{<span class="ident">estree</span>, <span class="ident">Parser</span>},
+};
+
+<span class="kw">static</span> <span class="ident">JS</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">r#&quot;
+class A extend B {
+    get a() {}
+}
+&quot;#</span>;
+
+<span class="kw">let</span> <span class="ident">tokens</span> <span class="op">=</span> <span class="ident">Lexer</span>::<span class="ident">lex_tokens</span>(<span class="ident">JS</span>).<span class="ident">unwrap</span>();
+<span class="ident">Parser</span>::<span class="ident">ast_tree</span>(<span class="ident">tokens</span>, <span class="ident">estree</span>::<span class="ident">ProgramSourceType</span>::<span class="ident">Script</span>);</pre></div>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="lexer/index.html" title='js_parser::lexer mod'>lexer</a></td><td class='docblock-short'><p>Lexer module consumes text input and produces linear stream of tokens.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="parser/index.html" title='js_parser::parser mod'>parser</a></td><td class='docblock-short'><p>This module creates AST from stream of tokens. Constructed AST implements
+ESTree standart.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><aside id="help" class="hidden"><div><h1 class="hidden">Help</h1><div class="shortcuts"><h2>Keyboard Shortcuts</h2><dl><dt><kbd>?</kbd></dt><dd>Show this help dialog</dd><dt><kbd>S</kbd></dt><dd>Focus the search field</dd><dt><kbd>↑</kbd></dt><dd>Move up in search results</dd><dt><kbd>↓</kbd></dt><dd>Move down in search results</dd><dt><kbd>↹</kbd></dt><dd>Switch tab</dd><dt><kbd>&#9166;</kbd></dt><dd>Go to active search result</dd><dt><kbd>+</kbd></dt><dd>Expand all sections</dd><dt><kbd>-</kbd></dt><dd>Collapse all sections</dd></dl></div><div class="infos"><h2>Search Tricks</h2><p>Prefix searches with a type followed by a colon (e.g. <code>fn:</code>) to restrict the search to a given type.</p><p>Accepted types are: <code>fn</code>, <code>mod</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>type</code>, <code>macro</code>, and <code>const</code>.</p><p>Search functions by type signature (e.g. <code>vec -> usize</code> or <code>* -> vec</code>)</p><p>Search multiple things at once by splitting your query with comma (e.g. <code>str,u8</code> or <code>String,struct:Vec,test</code>)</p></div></div></aside><script>window.rootPath = "../";window.currentCrate = "js_parser";</script><script src="../aliases.js"></script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

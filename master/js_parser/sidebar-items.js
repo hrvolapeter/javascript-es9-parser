@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["lexer","Lexer module consumes text input and produces linear stream of tokens."],["parser","This module creates AST from stream of tokens. Constructed AST implements ESTree standart."]]});
