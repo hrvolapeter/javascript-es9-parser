@@ -2,10 +2,10 @@
 //!
 //! Tokens are defined in [token](lexer::token)
 //!
-//! Grammar rules are in [div](lexer::div)
-//!
-//! Supporting macro in [macros](lexer::macros)
-//!
+// Grammar rules are in [div](lexer::div)
+//
+// Supporting macro in [macros](lexer::macros)
+//
 #![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
 use nom::{types::*, *};

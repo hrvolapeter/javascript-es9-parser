@@ -20,6 +20,7 @@ pub mod estree;
 pub mod node;
 #[macro_use]
 mod macros;
+mod expression;
 mod input_wrapper;
 mod script_module;
 mod statement_declaration;

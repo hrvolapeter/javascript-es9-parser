@@ -1,4 +1,8 @@
+use crate::parser::input_wrapper::InputWrapper;
 /// Parsing one token by it's name
+use nom::types::{Input, *};
+use nom::IResult;
+
 macro_rules! is_token (
   ($i:expr, $tag: path) => (
     {
@@ -35,3 +39,22 @@ macro_rules! test (
     }
   );
 );
+
+#[inline]
+pub fn either<'a, T>(
+    res: &IResult<Input<InputWrapper<'a>>, T>,
+    or: Input<InputWrapper<'a>>,
+) -> Input<InputWrapper<'a>> {
+    if let Ok((res, _)) = res {
+        return res.clone();
+    }
+    or
+}
+
+#[inline]
+pub fn unwrap_or_none<T>(res: IResult<Input<InputWrapper>, T>) -> Option<T> {
+    if let Ok((_, res)) = res {
+        return Some(res);
+    }
+    None
+}

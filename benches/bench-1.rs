@@ -38,13 +38,21 @@ static JS: &str = r#"
                 }
             }
         }
+
+        var a = function () {
+            var b = new A;
+        };
         "#;
 
 #[bench]
 fn react_build_script(b: &mut Bencher) {
+    let mut s = String::new();
+    for _ in 1..100 {
+        s += JS;
+    }
     b.iter(|| {
         test::black_box({
-            let lexer = Lexer::lex_tokens(JS).unwrap();
+            let lexer = Lexer::lex_tokens(&s).unwrap();
             Parser::ast_tree(lexer, estree::ProgramSourceType::Script);
         })
     });

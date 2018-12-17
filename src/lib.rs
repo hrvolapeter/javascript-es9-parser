@@ -49,7 +49,7 @@
 #![feature(rustc_private)]
 #![feature(box_patterns)]
 #![feature(box_syntax)]
-#![recursion_limit = "256"] // Only for macros, not function calls
+#![recursion_limit = "256"] // Only macros, doesn't affect function calls
 #![deny(warnings)]
 
 extern crate nom;

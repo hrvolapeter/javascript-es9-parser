@@ -1,4 +1,4 @@
-//! For transforming inpu to `Token`s we use nom library. Using `alt` macro we
+//! For transforming input to `Token`s we use nom library. Using `alt` macro we
 //! define that grammar rule has multiple results. Parsing starts with first
 //! rule and returns as soon as first of the rules
 //! succeeds.
