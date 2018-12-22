@@ -1,0 +1,37 @@
+{
+  "name": "test262-parser-tests",
+  "version": "0.0.3",
+  "description": "Test cases for ECMAScript parsers",
+  "files": [
+    "early/",
+    "fail/",
+    "pass/",
+    "pass-explicit/",
+    "licenses.md"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "normalize-parser-test": "1.0.0",
+    "shift-codegen": "^5.0.3",
+    "shift-parser": "^5.0.6"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tc39/test262-parser-tests.git"
+  },
+  "keywords": [
+    "test262",
+    "ecmascript",
+    "parser",
+    "test"
+  ],
+  "author": "",
+  "license": "SEE LICENSE IN licenses.md",
+  "bugs": {
+    "url": "https://github.com/tc39/test262-parser-tests/issues"
+  },
+  "homepage": "https://github.com/tc39/test262-parser-tests#readme"
+}

@@ -1,7 +1,7 @@
 # Javascript parser
 
-[![Build Status](https://travis-ci.com/retep007/javascript-es9-parser.svg?branch=master)](https://travis-ci.com/retep007/javascript-es9-parser)
-[![Coverage Status](https://coveralls.io/repos/github/retep007/javascript-es9-parser/badge.svg?branch=master)](https://coveralls.io/github/retep007/javascript-es9-parser?branch=master)
+<!-- [![Build Status](https://travis-ci.com/retep007/javascript-es9-parser.svg?branch=master)](https://travis-ci.com/retep007/javascript-es9-parser) -->
+<!-- [![Coverage Status](https://coveralls.io/repos/github/retep007/javascript-es9-parser/badge.svg?branch=master)](https://coveralls.io/github/retep007/javascript-es9-parser?branch=master) -->
 
 This project introduces javascript parser written in Rust-lang.
 

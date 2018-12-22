@@ -1,0 +1,18 @@
+[package]
+name = "js_parser"
+edition = '2018'
+version = "0.1.0"
+authors = ["Peter Hrvola <peter.hrvola@hotmail.com>"]
+
+[dependencies]
+nom = "4.0.0"
+unescape = "0.1.0"
+type-info = "0.2.1"
+type-info-derive = "0.2.0"
+mopa = "0.2.2"
+include_dir = "0.2.1"
+
+[dev-dependencies]
+pretty_assertions = "0.5.1"
+test262_parser_tests = { path = "../test262_parser_tests" }
+timebomb = "0.1.2"
