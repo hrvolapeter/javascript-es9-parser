@@ -393,7 +393,7 @@ impl StaticSemantics for node::property {
 mod test {
     use super::*;
     use crate::{
-        lexer::Lexer,
+        javascript_lexer::Lexer,
         parser::{
             estree::{AssignmentPattern, Identifier, ObjectPattern, VariableDeclaration, *},
             Parser,

@@ -3,7 +3,8 @@ extern crate js_parser;
 #[macro_use]
 extern crate pretty_assertions;
 
-use js_parser::lexer::{
+use javascript_lexer::{
+    internship,
     token::{Number, Token},
     Lexer,
 };
@@ -11,60 +12,69 @@ use js_parser::lexer::{
 #[test]
 fn simple_js_example() {
     let parsed = Lexer::lex_tokens(
-        r#"
+        "
     function a(a1, b1) {
-        let a = "ada \n";
-        const b = "dada\b\t";
+        let a = \"adan \\n\";
+        const b = \"dada\\b\\t\";
         var e, f, g = 1.2;
         var c = 'adad'
     }
 
-    a(1, "ddada");
-    "#,
+    a(1, \"ddada\");
+    ",
     )
     .unwrap();
     assert_eq!(
         parsed,
         vec![
+            Token::LineTerminator,
             Token::KFunction,
-            Token::IdentifierName(String::from("a")),
+            Token::IdentifierName(internship::IStr::new("a")),
             Token::LRound,
-            Token::IdentifierName(String::from("a1")),
+            Token::IdentifierName(internship::IStr::new("a1")),
             Token::Comma,
-            Token::IdentifierName(String::from("b1")),
+            Token::IdentifierName(internship::IStr::new("b1")),
             Token::RRound,
-            Token::LBrace,
+            Token::LCurly,
+            Token::LineTerminator,
             Token::KLet,
-            Token::IdentifierName(String::from("a")),
+            Token::IdentifierName(internship::IStr::new("a")),
             Token::Assign,
-            Token::StringLiteral(String::from("ada \n")),
+            Token::StringLiteral(String::from("adan \n")),
             Token::Semicolon,
+            Token::LineTerminator,
             Token::KConst,
-            Token::IdentifierName(String::from("b")),
+            Token::IdentifierName(internship::IStr::new("b")),
             Token::Assign,
             Token::StringLiteral(String::from("dada\u{8}\t")),
             Token::Semicolon,
+            Token::LineTerminator,
             Token::KVar,
-            Token::IdentifierName(String::from("e")),
+            Token::IdentifierName(internship::IStr::new("e")),
             Token::Comma,
-            Token::IdentifierName(String::from("f")),
+            Token::IdentifierName(internship::IStr::new("f")),
             Token::Comma,
-            Token::IdentifierName(String::from("g")),
+            Token::IdentifierName(internship::IStr::new("g")),
             Token::Assign,
             Token::NumericLiteral(Number::new(1, 2, 1, 10)),
             Token::Semicolon,
+            Token::LineTerminator,
             Token::KVar,
-            Token::IdentifierName(String::from("c")),
+            Token::IdentifierName(internship::IStr::new("c")),
             Token::Assign,
             Token::StringLiteral(String::from("adad")),
-            Token::RBrace,
-            Token::IdentifierName(String::from("a")),
+            Token::LineTerminator,
+            Token::RCurly,
+            Token::LineTerminator,
+            Token::LineTerminator,
+            Token::IdentifierName(internship::IStr::new("a")),
             Token::LRound,
             Token::NumericLiteral(Number::new(1, 0, 1, 10)),
             Token::Comma,
             Token::StringLiteral(String::from("ddada")),
             Token::RRound,
             Token::Semicolon,
+            Token::LineTerminator,
             Token::EOF
         ]
     );

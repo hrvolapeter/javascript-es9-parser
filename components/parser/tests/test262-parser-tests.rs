@@ -4,14 +4,12 @@ extern crate js_parser;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
+extern crate javascript_lexer;
 extern crate test;
 extern crate test262_parser_tests;
 extern crate timebomb;
-
-use js_parser::{
-    lexer::{error, Lexer},
-    parser::{estree::ProgramSourceType, Parser},
-};
+use js_parser::parser::{estree::ProgramSourceType, Parser};
+use javascript_lexer::{error, Lexer};
 use std::{
     fs::File,
     io::{self, Read},
@@ -19,10 +17,10 @@ use std::{
 use test262_parser_tests::{test_early_js, test_explicit_js, test_fail_js, test_pass_js};
 use timebomb::timeout_ms;
 
-test_pass_js!();
-test_fail_js!();
-test_early_js!();
-test_explicit_js!();
+// test_pass_js!();
+// test_fail_js!();
+// test_early_js!();
+// test_explicit_js!();
 
 fn read_file(path: &str) -> Result<String, io::Error> {
     let file = File::open(path)?;

@@ -4,7 +4,8 @@
 //! node can be contained in multiple enums.
 //!
 //! Every node implements it's trait from ESTree standart.
-use crate::{lexer::token::Number, parser::estree};
+use crate::{javascript_lexer::token::Number, parser::estree};
+use javascript_lexer::internship;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
@@ -353,7 +354,7 @@ impl estree::Node for ArrayPattern {}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Identifier {
-    pub name: String,
+    pub name: internship::IStr,
 }
 
 impl estree::Identifier for Identifier {
@@ -364,12 +365,6 @@ impl estree::Identifier for Identifier {
 impl estree::Pattern for Identifier {}
 impl estree::Node for Identifier {}
 impl estree::Expression for Identifier {}
-
-impl From<String> for Identifier {
-    fn from(name: String) -> Self {
-        Identifier { name }
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectExpressionProperty {

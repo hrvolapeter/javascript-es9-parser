@@ -5,12 +5,14 @@ version = "0.1.0"
 authors = ["Peter Hrvola <peter.hrvola@hotmail.com>"]
 
 [dependencies]
-nom = "4.0.0"
+nom = "4.1.1"
 unescape = "0.1.0"
 type-info = "0.2.1"
 type-info-derive = "0.2.0"
 mopa = "0.2.2"
 include_dir = "0.2.1"
+javascript_lexer = { path = "../javascript_lexer" }
+
 
 [dev-dependencies]
 pretty_assertions = "0.5.1"

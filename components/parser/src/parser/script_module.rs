@@ -1,5 +1,5 @@
 use crate::{
-    lexer::token::Token,
+    javascript_lexer::token::Token,
     parser::{
         estree::{self, ProgramSourceType},
         input_wrapper::InputWrapper,

@@ -15,7 +15,7 @@
 //!
 //! To convert string to stream of tokens we can use code simillar to this
 //! ```
-//! use js_parser::lexer::Lexer;
+//! use javascript_lexer::Lexer;
 //!
 //! static JS: &str = r#"
 //! class A extend B {
@@ -32,16 +32,10 @@
 //!
 //! Construct AST from token stream
 //! ```
-//! use js_parser::{
-//!     lexer::Lexer,
-//!     parser::{estree, Parser},
-//! };
+//! use js_parser::parser::{estree, Parser};
+//! use javascript_lexer::Lexer;
 //!
-//! static JS: &str = r#"
-//! class A extend B {
-//!     get a() {}
-//! }
-//! "#;
+//! static JS: &str = r#"class A extend B {get a() {}}"#;
 //!
 //! let tokens = Lexer::lex_tokens(JS).unwrap();
 //! Parser::ast_tree(tokens, estree::ProgramSourceType::Script);
@@ -49,6 +43,7 @@
 #![feature(rustc_private)]
 #![feature(box_patterns)]
 #![feature(box_syntax)]
+#![feature(const_fn)]
 #![recursion_limit = "256"] // Only macros, doesn't affect function calls
 #![deny(warnings)]
 
@@ -57,6 +52,6 @@ extern crate unescape;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
+extern crate javascript_lexer;
 
-pub mod lexer;
 pub mod parser;

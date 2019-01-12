@@ -1,5 +1,5 @@
 use crate::{
-    lexer::token::Token,
+    javascript_lexer::token::Token,
     parser::{
         estree,
         input_wrapper::InputWrapper,
@@ -19,7 +19,7 @@ use nom::{
 pub fn ExpressionStatement(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Statement> {
-    not!(tokens, is_token!(Token::LBrace))?;
+    not!(tokens, is_token!(Token::LCurly))?;
     not!(tokens, is_token!(Token::KFunction))?;
     let async_ = not!(tokens, is_token!(Token::KAsync))?;
     not!(async_.0, is_token!(Token::KFunction))?;
@@ -106,7 +106,7 @@ named!(pub ArrowParameters<Input<InputWrapper>, Vec<node::Pattern>>, alt!(
 
 fn ArrowFunction(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let params = ArrowParameters(tokens)?;
-    let arrow = is_token!(params.0, Token::EqualArrow)?;
+    let arrow = is_token!(params.0, Token::AssignBigger)?;
     let body = ConciseBody(arrow.0)?;
 
     Ok((
@@ -130,7 +130,7 @@ named!(pub ConciseBody<Input<InputWrapper>, node::ArrowFunctionExpressionBody>, 
 fn ConciseBody1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ArrowFunctionExpressionBody> {
-    not!(tokens, is_token!(Token::LBrace))?;
+    not!(tokens, is_token!(Token::LCurly))?;
     let assignment = AssignmentExpression(tokens)?;
 
     Ok((
@@ -142,9 +142,9 @@ fn ConciseBody1(
 fn ConciseBody2(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ArrowFunctionExpressionBody> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -259,7 +259,7 @@ fn LogicalORExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::Or)?;
+    let tok = is_token!(skipped.0, Token::DoubleOr)?;
     let or = LogicalORExpression(skipped.1)?;
     let and = LogicalORExpression(tok.0)?;
     Ok((
@@ -281,7 +281,7 @@ fn LogicalANDExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::And)?;
+    let tok = is_token!(skipped.0, Token::DoubleAnd)?;
     let or = LogicalANDExpression(skipped.1)?;
     let and = LogicalANDExpression(tok.0)?;
     Ok((
@@ -318,7 +318,7 @@ fn EqualityExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::Equal)?;
+    let tok = is_token!(skipped.0, Token::DoubleAssign)?;
     let or = EqualityExpression(skipped.1)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
@@ -335,7 +335,7 @@ fn EqualityExpression2(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::NotEqual)?;
+    let tok = is_token!(skipped.0, Token::ExclamationAssign)?;
     let or = EqualityExpression(skipped.1)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
@@ -352,7 +352,7 @@ fn EqualityExpression3(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::EqualEqual)?;
+    let tok = is_token!(skipped.0, Token::TripleAssign)?;
     let or = EqualityExpression(skipped.1)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
@@ -369,7 +369,7 @@ fn EqualityExpression4(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::NotEqualEqual)?;
+    let tok = is_token!(skipped.0, Token::ExclamationDoubleAssign)?;
     let or = EqualityExpression(skipped.1)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
@@ -395,7 +395,7 @@ named!(pub ShiftExpression<Input<InputWrapper>, node::Expression>, alt!(
 
 fn ShiftExpression1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::DoubleLAngle)?;
+    let tok = is_token!(skipped.0, Token::DoubleLesser)?;
     let or = ShiftExpression(skipped.1)?;
     let and = ShiftExpression(tok.0)?;
     Ok((
@@ -410,7 +410,7 @@ fn ShiftExpression1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>,
 
 fn ShiftExpression2(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::DoubleRAngle)?;
+    let tok = is_token!(skipped.0, Token::DoubleBigger)?;
     let or = ShiftExpression(skipped.1)?;
     let and = ShiftExpression(tok.0)?;
     Ok((
@@ -425,7 +425,7 @@ fn ShiftExpression2(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>,
 
 fn ShiftExpression3(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::TripleRAngle)?;
+    let tok = is_token!(skipped.0, Token::TripleBigger)?;
     let or = ShiftExpression(skipped.1)?;
     let and = ShiftExpression(tok.0)?;
     Ok((
@@ -489,7 +489,7 @@ fn MultiplicativeExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::Mult)?;
+    let tok = is_token!(skipped.0, Token::Star)?;
     let or = MultiplicativeExpression(skipped.1)?;
     let and = MultiplicativeExpression(tok.0)?;
     Ok((
@@ -506,7 +506,7 @@ fn MultiplicativeExpression2(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::Mod)?;
+    let tok = is_token!(skipped.0, Token::Percent)?;
     let or = MultiplicativeExpression(skipped.1)?;
     let and = MultiplicativeExpression(tok.0)?;
     Ok((
@@ -545,7 +545,7 @@ fn ExponentiationExpression1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let skipped = take!(tokens.clone(), 1)?;
-    let tok = is_token!(skipped.0, Token::DoubleMult)?;
+    let tok = is_token!(skipped.0, Token::DoubleStar)?;
     let or = UnaryExpression(skipped.1)?;
     let and = ExponentiationExpression(tok.0)?;
     Ok((
@@ -775,9 +775,9 @@ fn FunctionExpression(
     let bracket = is_token!(either(&ident, func.0), Token::LRound)?;
     let params = FormalParameters(bracket.0)?;
     let bracket = is_token!(params.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
     Ok((
         bracket.0,
         node::Expression::FunctionExpression(node::FunctionExpression {
@@ -803,8 +803,8 @@ named!(pub ObjectLiteral<Input<InputWrapper>, node::Expression>, alt!(
 ));
 
 fn ObjectLiteral1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
-    let bracket = is_token!(bracket.0, Token::RBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
+    let bracket = is_token!(bracket.0, Token::RCurly)?;
     Ok((
         bracket.0,
         node::Expression::ObjectExpression(node::ObjectExpression { properties: vec![] }),
@@ -812,9 +812,9 @@ fn ObjectLiteral1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, n
 }
 
 fn ObjectLiteral2(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
     let list = separated_nonempty_list!(bracket.0, is_token!(Token::Comma), PropertyDefinition)?;
-    let bracket = is_token!(list.0, Token::RBrace)?;
+    let bracket = is_token!(list.0, Token::RCurly)?;
     Ok((
         bracket.0,
         node::Expression::ObjectExpression(node::ObjectExpression { properties: list.1 }),
@@ -822,10 +822,10 @@ fn ObjectLiteral2(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, n
 }
 
 fn ObjectLiteral3(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
     let list = separated_nonempty_list!(bracket.0, is_token!(Token::Comma), PropertyDefinition)?;
     let comma = is_token!(list.0, Token::Comma)?;
-    let bracket = is_token!(list.0, Token::RBrace)?;
+    let bracket = is_token!(list.0, Token::RCurly)?;
     Ok((
         bracket.0,
         node::Expression::ObjectExpression(node::ObjectExpression { properties: list.1 }),
@@ -989,9 +989,13 @@ named!(pub LiteralPropertyName<Input<InputWrapper>, node::Expression>, alt!(
 
 fn IdentifierName(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let identifier = take!(tokens, 1)?;
-    if let Token::IdentifierName(ident) = &(*identifier.1.inner)[0] {
-        let ident: node::Identifier = ident.clone().into();
-        return Ok((identifier.0, node::Expression::Identifier(ident)));
+    if let Token::IdentifierName(ident) = &identifier.1.inner[0] {
+        return Ok((
+            identifier.0,
+            node::Expression::Identifier(node::Identifier {
+                name: ident.clone(),
+            }),
+        ));
     }
     Err(Err::Error(error_position!(
         identifier.0,
@@ -1071,7 +1075,7 @@ fn ComputedPropertyName(
 mod test {
     use super::*;
     use crate::{
-        lexer::Lexer,
+        javascript_lexer::Lexer,
         parser::{
             estree::{AssignmentPattern, Identifier, ObjectPattern, VariableDeclaration, *},
             Parser,

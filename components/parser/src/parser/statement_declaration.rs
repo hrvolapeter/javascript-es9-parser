@@ -7,7 +7,7 @@
 //! succeeds.
 
 use crate::{
-    lexer::token::Token,
+    javascript_lexer::token::Token,
     parser::{
         estree,
         expression::{
@@ -55,9 +55,9 @@ fn ClassDeclaration1(
     let class = is_token!(tokens, Token::KClass)?;
     let ident = BindingIdentifier(class.0)?;
     let herritage = ClassHeritage(ident.0);
-    let bracket = is_token!(either(&herritage, ident.0), Token::LBrace)?;
+    let bracket = is_token!(either(&herritage, ident.0), Token::LCurly)?;
     let body = ClassBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -74,9 +74,9 @@ fn ClassDeclaration2(
 ) -> IResult<Input<InputWrapper>, node::Declaration> {
     let class = is_token!(tokens, Token::KClass)?;
     let herritage = ClassHeritage(class.0);
-    let bracket = is_token!(either(&herritage, class.0), Token::LBrace)?;
+    let bracket = is_token!(either(&herritage, class.0), Token::LCurly)?;
     let body = ClassBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     unimplemented!("Annonymous classes are not supported")
 }
@@ -128,9 +128,9 @@ fn MethodDefinition1(
     let bracket = is_token!(name.0, Token::LRound)?;
     let params = UniqueFormalParameters(bracket.0)?;
     let bracket = is_token!(params.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -163,9 +163,9 @@ fn MethodDefinition5(
     let name = PropertyName(get.0)?;
     let bracket = is_token!(name.0, Token::LRound)?;
     let bracket = is_token!(bracket.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -199,9 +199,9 @@ fn MethodDefinition6(
     let bracket = is_token!(name.0, Token::LRound)?;
     let param = FormalParameter(bracket.0)?;
     let bracket = is_token!(param.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -260,9 +260,9 @@ fn FunctionDeclaration1(
     let bracket = is_token!(ident.0, Token::LRound)?;
     let params = FormalParameters(bracket.0)?;
     let bracket = is_token!(params.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
     Ok((
         bracket.0,
@@ -289,11 +289,26 @@ fn FunctionDeclaration2(
     let bracket = is_token!(function.0, Token::LRound)?;
     let params = FormalParameters(bracket.0)?;
     let bracket = is_token!(params.0, Token::RRound)?;
-    let bracket = is_token!(bracket.0, Token::LBrace)?;
+    let bracket = is_token!(bracket.0, Token::LCurly)?;
     let body = FunctionBody(bracket.0)?;
-    let bracket = is_token!(body.0, Token::RBrace)?;
+    let bracket = is_token!(body.0, Token::RCurly)?;
 
-    unimplemented!("Annonymous functions are not supported")
+    Ok((
+        bracket.0,
+        node::FunctionDeclaration {
+            id: None,
+            params: params.1,
+            body: node::FunctionBody {
+                body: body
+                    .1
+                    .into_iter()
+                    .map(|i| node::FunctionBodyEnum::Statement(i))
+                    .collect(),
+            },
+            generator: false,
+            async_: false,
+        },
+    ))
 }
 
 named!(pub FormalParameters<Input<InputWrapper>, Vec<node::Pattern>>, alt!(
@@ -580,8 +595,13 @@ fn ContinueStatement2(
 
 fn LabelIdentifier(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Identifier> {
     let identifier = take!(tokens, 1)?;
-    if let Token::IdentifierName(ident) = &(*identifier.1.inner)[0] {
-        return Ok((identifier.0, ident.clone().into()));
+    if let Token::IdentifierName(ident) = &identifier.1.inner[0] {
+        return Ok((
+            identifier.0,
+            node::Identifier {
+                name: ident.clone(),
+            },
+        ));
     }
     Err(Err::Error(error_position!(
         identifier.0,
@@ -615,17 +635,17 @@ named!(pub CaseBlock<Input<InputWrapper>, Vec<node::SwitchCase>>, alt!(
 ));
 
 fn CaseBlock1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, Vec<node::SwitchCase>> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
     let clauses = many0!(bracket.0, CaseClause);
     if let Ok((rest, consumed)) = clauses {
         return Ok((rest, consumed));
     }
-    let bracket = is_token!(bracket.0, Token::RBrace)?;
+    let bracket = is_token!(bracket.0, Token::RCurly)?;
     Ok((bracket.0, vec![]))
 }
 
 fn CaseBlock2(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, Vec<node::SwitchCase>> {
-    let bracket = is_token!(tokens, Token::LBrace)?;
+    let bracket = is_token!(tokens, Token::LCurly)?;
     let mut input = bracket.0;
     let mut res = vec![];
     let mut clauses = many0!(bracket.0, CaseClause);
@@ -1192,12 +1212,12 @@ named!(pub BlockStatement<Input<InputWrapper>, node::Statement>, alt!(
 ));
 
 fn Block(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::BlockStatement> {
-    let brackets = is_token!(tokens, Token::LBrace)?;
+    let brackets = is_token!(tokens, Token::LCurly)?;
     if let Ok((rest, statement)) = StatementList(brackets.0) {
-        let brackets = is_token!(rest, Token::RBrace)?;
+        let brackets = is_token!(rest, Token::RCurly)?;
         return Ok((brackets.0, node::BlockStatement { body: statement }));
     }
-    let brackets = is_token!(brackets.0, Token::RBrace)?;
+    let brackets = is_token!(brackets.0, Token::RCurly)?;
     Ok((brackets.0, node::BlockStatement { body: vec![] }))
 }
 
@@ -1264,8 +1284,13 @@ pub fn BindingIdentifier(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Identifier> {
     let identifier = take!(tokens, 1)?;
-    if let Token::IdentifierName(ident) = &(*identifier.1.inner)[0] {
-        return Ok((identifier.0, ident.clone().into()));
+    if let Token::IdentifierName(ident) = &identifier.1.inner[0] {
+        return Ok((
+            identifier.0,
+            node::Identifier {
+                name: ident.clone(),
+            },
+        ));
     }
     Err(Err::Error(error_position!(
         identifier.0,
@@ -1290,17 +1315,17 @@ named!(pub ObjectBindingPattern<Input<InputWrapper>, node::Pattern>, do_parse!(
 fn ObjectBindingPattern1(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ObjectPattern> {
-    let brackets = is_token!(tokens, Token::LBrace)?;
-    let brackets = is_token!(brackets.0, Token::RBrace)?;
+    let brackets = is_token!(tokens, Token::LCurly)?;
+    let brackets = is_token!(brackets.0, Token::RCurly)?;
     Ok((brackets.0, node::ObjectPattern { properties: vec![] }))
 }
 
 fn ObjectBindingPattern2(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ObjectPattern> {
-    let brackets = is_token!(tokens, Token::LBrace)?;
+    let brackets = is_token!(tokens, Token::LCurly)?;
     let rest = BindingRestProperty(brackets.0)?;
-    let brackets = is_token!(rest.0, Token::RBrace)?;
+    let brackets = is_token!(rest.0, Token::RCurly)?;
 
     Ok((
         brackets.0,
@@ -1415,23 +1440,23 @@ fn BindingElement1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, 
 fn ObjectBindingPattern3(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ObjectPattern> {
-    let brackets = is_token!(tokens, Token::LBrace)?;
+    let brackets = is_token!(tokens, Token::LCurly)?;
     let list = BindingPropertyList(brackets.0)?;
-    let brackets = is_token!(list.0, Token::RBrace)?;
+    let brackets = is_token!(list.0, Token::RCurly)?;
     Ok((brackets.0, node::ObjectPattern { properties: list.1 }))
 }
 
 fn ObjectBindingPattern4(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::ObjectPattern> {
-    let brackets = is_token!(tokens, Token::LBrace)?;
+    let brackets = is_token!(tokens, Token::LCurly)?;
     let list = BindingPropertyList(brackets.0)?;
     let comma = is_token!(list.0, Token::Comma)?;
     let rest = BindingRestProperty(list.0);
     let brackets = if let Ok(rest) = rest {
-        is_token!(rest.0, Token::RBrace)?
+        is_token!(rest.0, Token::RCurly)?
     } else {
-        is_token!(comma.0, Token::RBrace)?
+        is_token!(comma.0, Token::RCurly)?
     };
     Ok((brackets.0, node::ObjectPattern { properties: list.1 }))
 }
@@ -1564,17 +1589,17 @@ pub fn AssignmentOperator(
 ) -> IResult<Input<InputWrapper>, estree::AssignmentOperator> {
     let token = take!(tokens, 1)?;
     let res = match (*token.1.inner)[0] {
-        Token::MultAssign => estree::AssignmentOperator::TimesEqual,
-        Token::SlashEqual => estree::AssignmentOperator::SlashEqual,
-        Token::ModAssign => estree::AssignmentOperator::PercentEqual,
+        Token::StarAssign => estree::AssignmentOperator::TimesEqual,
+        Token::SlashAssign => estree::AssignmentOperator::SlashEqual,
+        Token::PercentAssign => estree::AssignmentOperator::PercentEqual,
         Token::PlusAssign => estree::AssignmentOperator::PlusEqual,
         Token::MinusAssign => estree::AssignmentOperator::MinusEqual,
-        Token::DoubleLArrowAssign => estree::AssignmentOperator::LessLessEqual,
-        Token::DoubleRArrowAssign => estree::AssignmentOperator::MoreMoreEqual,
-        Token::TripleRArrowAssign => estree::AssignmentOperator::MoreMoreMoreEqual,
-        Token::AmpAssign => estree::AssignmentOperator::AndEqual,
+        Token::DoubleLesserEqual => estree::AssignmentOperator::LessLessEqual,
+        Token::DoubleBiggerEqual => estree::AssignmentOperator::MoreMoreEqual,
+        Token::TripleBiggerEqual => estree::AssignmentOperator::MoreMoreMoreEqual,
+        Token::AndAssign => estree::AssignmentOperator::AndEqual,
         Token::CaretAssign => estree::AssignmentOperator::CaretEqual,
-        Token::PipeAssign => estree::AssignmentOperator::PipeEqual,
+        Token::OrAssign => estree::AssignmentOperator::PipeEqual,
         Token::DoubleStarAssign => estree::AssignmentOperator::StarStarEqual,
         _ => return Err(Err::Error(error_position!(token.0, ErrorKind::Custom(1)))),
     };
@@ -1601,7 +1626,7 @@ fn FunctionStatementList(
 mod test {
     use super::*;
     use crate::{
-        lexer::Lexer,
+        javascript_lexer::Lexer,
         parser::{
             estree::{AssignmentPattern, Identifier, ObjectPattern, VariableDeclaration, *},
             Parser,
