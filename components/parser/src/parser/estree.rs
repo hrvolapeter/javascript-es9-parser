@@ -1,6 +1,6 @@
 /// AST tree interfaces as specified in ESTree standart
 /// https://github.com/estree/estree/
-use crate::{lexer, parser::node};
+use crate::{javascript_lexer, parser::node};
 use std::fmt::Debug;
 
 pub trait Node: Debug {}
@@ -173,9 +173,9 @@ pub enum VariableDeclarationKind {
     Var,
 }
 
-impl From<lexer::token::Token> for VariableDeclarationKind {
-    fn from(other: lexer::token::Token) -> Self {
-        use crate::lexer::token::Token;
+impl From<javascript_lexer::token::Token> for VariableDeclarationKind {
+    fn from(other: javascript_lexer::token::Token) -> Self {
+        use crate::javascript_lexer::token::Token;
         match other {
             Token::KLet => VariableDeclarationKind::Let,
             Token::KVar => VariableDeclarationKind::Var,

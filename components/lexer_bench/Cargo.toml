@@ -1,0 +1,15 @@
+[package]
+name = "lexer_bench"
+version = "0.1.0"
+authors = ["retep007 <peter.hrvola@airtame.com>"]
+edition = "2018"
+
+[dependencies]
+javascript_lexer = { path = "../javascript_lexer" }
+
+[profile.release]
+lto = true
+
+[profile.bench]
+debug = true
+lto = true

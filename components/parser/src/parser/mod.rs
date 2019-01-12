@@ -11,7 +11,7 @@
 //
 #![allow(warnings)]
 use crate::{
-    lexer::token::Token,
+    javascript_lexer::token::Token,
     parser::{estree::*, input_wrapper::InputWrapper},
 };
 use nom::{types::*, *};
@@ -24,7 +24,7 @@ mod expression;
 mod input_wrapper;
 mod script_module;
 mod statement_declaration;
-mod static_semantics;
+pub mod static_semantics;
 
 pub struct Parser;
 

@@ -1,5 +1,14 @@
 [workspace]
 members = [
     "components/test262_parser_tests",
-    "components/parser"
+    "components/parser",
+    "components/javascript_lexer",
+    "components/lexer_bench",
 ]
+
+[profile.release]
+lto = true
+
+[profile.bench]
+debug = true
+lto = true
