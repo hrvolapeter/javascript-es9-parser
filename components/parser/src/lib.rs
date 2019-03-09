@@ -4,10 +4,6 @@
 //!
 //! This project is still a work in progress.
 //!
-//! Project is organized in two parts:
-//! - [lexer](lexer)
-//! - [parser](parser)
-//!
 //! Lexer carries out transformation of input to linear stream of tokens. Rules
 //! for lexer closely resemble [Lexical grammar in ESCMAScript](http://www.ecma-international.org/ecma-262/9.0/index.html#sec-lexical-grammar).
 //! Lexer transform n letters of input to exactly 1 token. This allows better
@@ -32,8 +28,8 @@
 //!
 //! Construct AST from token stream
 //! ```
-//! use js_parser::parser::{estree, Parser};
 //! use javascript_lexer::Lexer;
+//! use js_parser::{estree, Parser};
 //!
 //! static JS: &str = r#"class A extend B {get a() {}}"#;
 //!
@@ -46,12 +42,47 @@
 #![feature(const_fn)]
 #![recursion_limit = "256"] // Only macros, doesn't affect function calls
 #![deny(warnings)]
+#![allow(non_snake_case, unused_must_use, dead_code)]
 
 extern crate nom;
 extern crate unescape;
 #[cfg(test)]
 #[macro_use]
 extern crate pretty_assertions;
-extern crate javascript_lexer;
+pub extern crate javascript_lexer;
 
-pub mod parser;
+// This module creates AST from stream of tokens. Constructed AST implements
+// ESTree standart.
+//
+// ESTree interface is defined in [estree](parser::estree).
+//
+// Structs for representation of AST are defined in [node](parser::node).
+// AST is constructed in [statement_declaration](parser::statement_declaration).
+//
+// Code for checking static semantics is in
+// [static_semantics](parser::static_semantics).
+//
+use crate::{estree::*, javascript_lexer::token::Token};
+
+pub mod estree;
+pub mod node;
+#[macro_use]
+mod macros;
+mod expression;
+mod input_wrapper;
+mod script_module;
+mod statement_declaration;
+pub mod static_semantics;
+
+pub struct Parser;
+
+impl Parser {
+    /// Convert tokens to AST
+    pub fn ast_tree(tokens: Vec<Token>, ty: ProgramSourceType) -> node::Program {
+        let tokens = tokens
+            .into_iter()
+            .filter(|t| t != &Token::LineTerminator)
+            .collect();
+        script_module::parse_script(tokens, ty)
+    }
+}

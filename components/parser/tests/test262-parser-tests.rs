@@ -8,8 +8,8 @@ extern crate javascript_lexer;
 extern crate test;
 extern crate test262_parser_tests;
 extern crate timebomb;
-use js_parser::parser::{estree::ProgramSourceType, Parser};
 use javascript_lexer::{error, Lexer};
+use js_parser::{estree::ProgramSourceType, Parser};
 use std::{
     fs::File,
     io::{self, Read},

@@ -2,8 +2,7 @@
 members = [
     "components/test262_parser_tests",
     "components/parser",
-    "components/javascript_lexer",
-    "components/lexer_bench",
+    "components/evaluator",
 ]
 
 [profile.release]

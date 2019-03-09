@@ -1,0 +1,12 @@
+[package]
+name = "evaluator"
+version = "0.1.0"
+authors = ["retep007 <peter.hrvola@airtame.com>"]
+edition = "2018"
+
+[dependencies]
+js_evaluator = { path = "../evaluator-lib" }
+js_parser = { path = "../parser" }
+
+[dev-dependencies]
+compiletest_rs = "0.3.19"

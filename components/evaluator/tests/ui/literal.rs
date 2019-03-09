@@ -1,0 +1,10 @@
+var a = 1;
+var b = true;
+var c = "string";
+var d = 'string';
+var e = null;
+console.log(a);
+console.log(b);
+console.log(c);
+console.log(d);
+console.log(e);
