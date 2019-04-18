@@ -17,7 +17,22 @@ function a() {
 }
 
 if (a()) {
-    console.log(3);
+    if (true) {
+        var b = 3;
+    }
+    console.log(b);
 }
 
-if (true) console.log(4);
+if (true || true) console.log(4);
+
+if (1 < 5) {
+    console.log(5);
+}
+
+if (1 <= 1) {
+    console.log(6);
+}
+
+if (1 <= 0) {
+    console.log(6);
+}

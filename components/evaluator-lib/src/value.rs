@@ -1,9 +1,14 @@
 use crate::{function::Function, object::ObjectData};
 use gc::{Gc, GcCell};
 use js_parser::{javascript_lexer::token, node};
-use std::fmt;
+use std::{
+    cmp::Ordering,
+    fmt,
+    ops::{Add, Sub},
+};
 
 // 6.2.3 https://tc39.github.io/ecma262/#sec-completion-record-specification-type
+#[derive(Debug)]
 pub struct Completion {
     pub ty: CompletionType,
     pub value: Option<Value>,
@@ -99,12 +104,87 @@ impl PartialEq for ValueData {
     }
 }
 
+impl PartialOrd for ValueData {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        use ValueData::*;
+        match (self, other) {
+            (Number(fst), Number(snd)) => fst.integer.partial_cmp(&snd.integer),
+            (String(fst), String(snd)) => unimplemented!("Missing type coerrection"),
+            (Boolean(true), Boolean(false)) => Some(Ordering::Greater),
+            (Boolean(false), Boolean(true)) => Some(Ordering::Less),
+            (Null, Null) | (Undefined, Undefined) => Some(Ordering::Equal),
+            _ => None,
+        }
+    }
+}
+
+impl Add for ValueData {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        use ValueData::*;
+        match (&self, &other) {
+            (Number(fst), Number(snd)) => ValueData::Number(fst.clone() + snd.clone()),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl Sub for ValueData {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        use ValueData::*;
+        match (&self, &other) {
+            (Number(fst), Number(snd)) => ValueData::Number(fst.clone() - snd.clone()),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl From<i32> for ValueData {
+    fn from(num: i32) -> Self {
+        ValueData::Number(Number {
+            integer: num,
+            decimal: 0,
+            exponent: 1,
+            base: 10,
+        })
+    }
+}
+
 #[derive(Trace, Finalize, PartialEq, Debug, Clone)]
 pub struct Number {
     pub integer: i32,
     pub decimal: u32,
     pub exponent: i64,
     pub base: u8,
+}
+
+impl Add for Number {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Number {
+            integer: self.integer + other.integer,
+            decimal: self.decimal + other.decimal,
+            exponent: self.exponent, // Nope
+            base: self.base,
+        }
+    }
+}
+
+impl Sub for Number {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Number {
+            integer: self.integer - other.integer,
+            decimal: self.decimal - other.decimal,
+            exponent: self.exponent, // Nope
+            base: self.base,
+        }
+    }
 }
 
 impl fmt::Display for Number {

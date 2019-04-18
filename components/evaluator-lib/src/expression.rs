@@ -105,19 +105,32 @@ pub fn array_expression(node: &node::ArrayExpression, scope: &mut Scope) -> Comp
 }
 
 pub fn assignment(node: &node::AssignmentExpression, scope: &mut Scope) -> Completion {
+    use js_parser::estree::AssignmentOperator;
     let key = if let node::Pattern::Identifier(ident) = &*node.left {
         &ident.name
     } else {
         panic!("Only identifier assignemnt is supported")
     };
-    let val = Interpreter::run_node(&(*node.right).clone().into(), scope);
+    let val = Interpreter::run_node(&(*node.right).clone().into(), scope)
+        .value
+        .as_ref()
+        .unwrap()
+        .deref()
+        .clone();
     let var = scope.find(&key.to_string());
-    var.set(val.value.as_ref().unwrap().clone());
-    val
+    let res = var.get().deref().clone();
+    let res = match node.operator {
+        AssignmentOperator::PlusEqual => res + val,
+        AssignmentOperator::MinusEqual => res - val,
+        AssignmentOperator::Equal => val,
+        _ => unimplemented!(),
+    };
+    var.set(Gc::new(res.clone()));
+    Completion::normal(res)
 }
 
 pub fn binary(node: &node::BinaryExpression, scope: &mut Scope) -> Completion {
-    use js_parser::estree::BinaryOperator::*;
+    use js_parser::estree::BinaryOperator;
     let left = Interpreter::run_node(&(*node.left).clone().into(), scope)
         .value
         .unwrap();
@@ -125,8 +138,24 @@ pub fn binary(node: &node::BinaryExpression, scope: &mut Scope) -> Completion {
         .value
         .unwrap();
     match &node.operator {
-        EqualEqualEqual => Completion::normal(ValueData::Boolean(left.deref() == right.deref())),
-        NotEqualEqual => Completion::normal(ValueData::Boolean(left.deref() != right.deref())),
+        BinaryOperator::EqualEqualEqual => {
+            Completion::normal(ValueData::Boolean(left.deref() == right.deref()))
+        }
+        BinaryOperator::ExclamationEqualEqual => {
+            Completion::normal(ValueData::Boolean(left.deref() != right.deref()))
+        }
+        BinaryOperator::Less => {
+            Completion::normal(ValueData::Boolean(left.deref() < right.deref()))
+        }
+        BinaryOperator::LessEqual => {
+            Completion::normal(ValueData::Boolean(left.deref() <= right.deref()))
+        }
+        BinaryOperator::MoreEqual => {
+            Completion::normal(ValueData::Boolean(left.deref() >= right.deref()))
+        }
+        BinaryOperator::More => {
+            Completion::normal(ValueData::Boolean(left.deref() > right.deref()))
+        }
         _ => panic!("Unsuported operator"),
     }
 }

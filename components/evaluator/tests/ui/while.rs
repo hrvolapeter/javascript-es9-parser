@@ -4,10 +4,22 @@ while (a === 0) {
     a = 1;
 }
 
-function a() {
+function b() {
     while(true) {
-        return 1;
+        return 2;
     }
 }
 
-// console.log(a());
+console.log(b());
+
+var c = 0;
+while (c < 4) {
+    c += 1;
+    console.log(c);
+}
+
+var c = 4;
+while (c > 0) {
+    c -= 1;
+    console.log(c);
+}

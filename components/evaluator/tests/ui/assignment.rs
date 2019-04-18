@@ -6,3 +6,7 @@ var b = a;
 a = 3;
 console.log(b);
 console.log(a);
+
+let k = 1;
+k = 4;
+console.log(k);

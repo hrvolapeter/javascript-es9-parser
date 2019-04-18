@@ -17,3 +17,10 @@ function c() {
     return 2;
 }
 console.log(c());
+
+function k() {
+    while (true) {
+        return "while";
+    }
+}
+console.log(k());

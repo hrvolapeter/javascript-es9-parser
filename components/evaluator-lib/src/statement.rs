@@ -29,9 +29,11 @@ pub fn block(node: &node::BlockStatement, scope: &mut Scope) -> Completion {
         if res.ty != CompletionType::Normal {
             return res;
         }
-        let res = res.value.unwrap().deref().clone();
-        if res != ValueData::Undefined {
-            last = res;
+        if let Some(val) = res.value {
+            let res = val.deref().clone();
+            if res != ValueData::Undefined {
+                last = res;
+            }
         }
     }
     Completion::normal(last)
@@ -46,11 +48,11 @@ pub fn _while(node: &node::WhileStatement, scope: &mut Scope) -> Completion {
         .deref()
         .into()
     {
-        let res = Interpreter::run_node(&node.body.deref().clone().into(), scope)
-            .value
-            .unwrap()
-            .deref()
-            .clone();
+        let res = Interpreter::run_node(&node.body.deref().clone().into(), scope);
+        if res.ty != CompletionType::Normal {
+            return res;
+        }
+        let res = res.value.unwrap().deref().clone();
         if res != ValueData::Undefined {
             last = res;
         }

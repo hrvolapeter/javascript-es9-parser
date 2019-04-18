@@ -302,24 +302,29 @@ named!(pub BitwiseANDExpression<Input<InputWrapper>, node::Expression>, alt!(
 ));
 
 named!(pub EqualityExpression<Input<InputWrapper>, node::Expression>, alt!(
-    EqualityExpression1 |
-    EqualityExpression2 |
-    EqualityExpression3 |
-    EqualityExpression4 |
+    do_parse!(
+        relat : RelationalExpression >>
+        res: alt!(
+            call!(EqualityExpression1, relat.clone()) |
+            call!(EqualityExpression2, relat.clone()) |
+            call!(EqualityExpression3, relat.clone()) |
+            call!(EqualityExpression4, relat)
+        ) >>
+        (res)) |
     RelationalExpression
 ));
 
 fn EqualityExpression1(
     tokens: Input<InputWrapper>,
+    expr: node::Expression,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
-    let or = RelationalExpression(tokens)?;
-    let tok = is_token!(or.0, Token::DoubleAssign)?;
+    let tok = is_token!(tokens, Token::DoubleAssign)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
         and.0,
         node::Expression::BinaryExpression(node::BinaryExpression {
             operator: estree::BinaryOperator::EqualEqual,
-            left: box or.1,
+            left: box expr,
             right: box and.1,
         }),
     ))
@@ -327,15 +332,15 @@ fn EqualityExpression1(
 
 fn EqualityExpression2(
     tokens: Input<InputWrapper>,
+    expr: node::Expression,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
-    let or = RelationalExpression(tokens)?;
-    let tok = is_token!(or.0, Token::ExclamationAssign)?;
+    let tok = is_token!(tokens, Token::ExclamationAssign)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
         and.0,
         node::Expression::BinaryExpression(node::BinaryExpression {
             operator: estree::BinaryOperator::ExclamationEqual,
-            left: box or.1,
+            left: box expr,
             right: box and.1,
         }),
     ))
@@ -343,15 +348,15 @@ fn EqualityExpression2(
 
 fn EqualityExpression3(
     tokens: Input<InputWrapper>,
+    expr: node::Expression,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
-    let or = RelationalExpression(tokens)?;
-    let tok = is_token!(or.0, Token::TripleAssign)?;
+    let tok = is_token!(tokens, Token::TripleAssign)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
         and.0,
         node::Expression::BinaryExpression(node::BinaryExpression {
             operator: estree::BinaryOperator::EqualEqualEqual,
-            left: box or.1,
+            left: box expr,
             right: box and.1,
         }),
     ))
@@ -359,23 +364,96 @@ fn EqualityExpression3(
 
 fn EqualityExpression4(
     tokens: Input<InputWrapper>,
+    expr: node::Expression,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
-    let or = RelationalExpression(tokens)?;
-    let tok = is_token!(or.0, Token::ExclamationDoubleAssign)?;
+    let tok = is_token!(tokens, Token::ExclamationDoubleAssign)?;
     let and = EqualityExpression(tok.0)?;
     Ok((
         and.0,
         node::Expression::BinaryExpression(node::BinaryExpression {
             operator: estree::BinaryOperator::ExclamationEqualEqual,
-            left: box or.1,
+            left: box expr,
             right: box and.1,
         }),
     ))
 }
 
 named!(pub RelationalExpression<Input<InputWrapper>, node::Expression>, alt!(
+    do_parse!(
+        shift : ShiftExpression >>
+        res: alt!(
+            call!(RelationalExpression1, shift.clone()) |
+            call!(RelationalExpression2, shift.clone()) |
+            call!(RelationalExpression3, shift.clone()) |
+            call!(RelationalExpression4, shift)
+        ) >>
+        (res)) |
     ShiftExpression
 ));
+
+fn RelationalExpression1(
+    tokens: Input<InputWrapper>,
+    expr: node::Expression,
+) -> IResult<Input<InputWrapper>, node::Expression> {
+    let tok = is_token!(tokens, Token::Lesser)?;
+    let and = RelationalExpression(tok.0)?;
+    Ok((
+        and.0,
+        node::Expression::BinaryExpression(node::BinaryExpression {
+            operator: estree::BinaryOperator::Less,
+            left: box expr,
+            right: box and.1,
+        }),
+    ))
+}
+
+fn RelationalExpression2(
+    tokens: Input<InputWrapper>,
+    expr: node::Expression,
+) -> IResult<Input<InputWrapper>, node::Expression> {
+    let tok = is_token!(tokens, Token::Bigger)?;
+    let and = RelationalExpression(tok.0)?;
+    Ok((
+        and.0,
+        node::Expression::BinaryExpression(node::BinaryExpression {
+            operator: estree::BinaryOperator::More,
+            left: box expr,
+            right: box and.1,
+        }),
+    ))
+}
+
+fn RelationalExpression3(
+    tokens: Input<InputWrapper>,
+    expr: node::Expression,
+) -> IResult<Input<InputWrapper>, node::Expression> {
+    let tok = is_token!(tokens, Token::LessEqual)?;
+    let and = RelationalExpression(tok.0)?;
+    Ok((
+        and.0,
+        node::Expression::BinaryExpression(node::BinaryExpression {
+            operator: estree::BinaryOperator::LessEqual,
+            left: box expr,
+            right: box and.1,
+        }),
+    ))
+}
+
+fn RelationalExpression4(
+    tokens: Input<InputWrapper>,
+    expr: node::Expression,
+) -> IResult<Input<InputWrapper>, node::Expression> {
+    let tok = is_token!(tokens, Token::BiggerEqual)?;
+    let and = RelationalExpression(tok.0)?;
+    Ok((
+        and.0,
+        node::Expression::BinaryExpression(node::BinaryExpression {
+            operator: estree::BinaryOperator::MoreEqual,
+            left: box expr,
+            right: box and.1,
+        }),
+    ))
+}
 
 named!(pub ShiftExpression<Input<InputWrapper>, node::Expression>, alt!(
     ShiftExpression1 |
