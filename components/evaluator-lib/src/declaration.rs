@@ -18,13 +18,16 @@ pub fn variable(node: &node::VariableDeclaration, scope: &mut Scope) -> Completi
                 Completion::normal(ValueData::Null)
             };
             let val = val.value.unwrap();
-            match kind {
+            let res = match kind {
                 VariableDeclarationKind::Let => scope._let(ident.name.to_string(), val),
                 VariableDeclarationKind::Var => scope.var(ident.name.to_string(), val),
                 VariableDeclarationKind::Const => scope._const(ident.name.to_string(), val),
             };
+            if !res {
+                evaluation_error!("Redeclaration of let/const variable `{}`", ident.name);
+            }
         } else {
-            panic!("unsupported variable declaration {:?}", decl.id);
+            unimplemented!("unsupported variable declaration {:?}", decl.id);
         }
     }
     Completion::normal_empty()

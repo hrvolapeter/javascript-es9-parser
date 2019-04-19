@@ -82,6 +82,7 @@ pub enum Node {
     BlockStatement(BlockStatement),
     EmptyStatement(EmptyStatement),
     ArrowFunctionExpression(ArrowFunctionExpression),
+    ArrowFunctionExpressionBody(ArrowFunctionExpressionBody),
     FunctionExpression(FunctionExpression),
     CallExpression(CallExpression),
     FunctionBody(FunctionBody),

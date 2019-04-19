@@ -11,5 +11,5 @@ console.log(1,2,3);
     let b = 5;
     const c = 6;
 
-    console.log(4,5,6);
+    console.log(a,b,c);
 }

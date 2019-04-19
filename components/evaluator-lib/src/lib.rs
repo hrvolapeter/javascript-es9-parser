@@ -48,6 +48,7 @@ impl Interpreter {
             }
             node::Node::VariableDeclaration(decl) => declaration::variable(decl, scope),
             node::Node::CallExpression(expr) => expression::call_expression(expr, scope),
+            node::Node::MemberExpression(expr) => expression::member_expression(expr, scope),
             node::Node::Identifier(ident) => {
                 // Hack because lexer is not recognizing undefined as a keyword
                 if ident.name == "undefined" {
@@ -57,6 +58,9 @@ impl Interpreter {
             }
             node::Node::ObjectExpression(expr) => expression::object_expression(expr, scope),
             node::Node::ArrayExpression(expr) => expression::array_expression(expr, scope),
+            node::Node::FunctionExpression(expr) => expression::function(expr, scope),
+            node::Node::ArrowFunctionExpression(expr) => expression::arrow_function(expr, scope),
+            node::Node::ArrowFunctionExpressionBody(expr) => expression::arrow_function_body(expr, scope),
             node::Node::AssignmentExpression(expr) => expression::assignment(expr, scope),
             node::Node::FunctionDeclaration(decl) => declaration::function(decl, scope),
             node::Node::ReturnStatement(stmt) => {
@@ -77,6 +81,7 @@ impl Interpreter {
             node::Node::IfStatement(stmt) => statement::_if(stmt, scope),
             node::Node::BlockStatement(stmt) => statement::block(stmt, scope),
             node::Node::WhileStatement(stmt) => statement::_while(stmt, scope),
+            node::Node::ForStatement(stmt) => statement::_for(stmt, scope),
             node::Node::BinaryExpression(expr) => expression::binary(expr, scope),
             node::Node::UnaryExpression(expr) => expression::unary(expr, scope),
             node::Node::LogicalExpression(expr) => expression::logical(expr, scope),

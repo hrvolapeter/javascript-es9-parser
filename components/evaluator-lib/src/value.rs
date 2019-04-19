@@ -24,6 +24,14 @@ impl Completion {
         }
     }
 
+    pub fn normal_gc(value: Value) -> Self {
+        Self {
+            ty: CompletionType::Normal,
+            value: Some(value),
+            target: None,
+        }
+    }
+
     pub fn normal_empty() -> Self {
         Self {
             ty: CompletionType::Normal,

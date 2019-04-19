@@ -814,18 +814,38 @@ named!(pub LeftHandSideExpression<Input<InputWrapper>, node::Expression>, alt!(
 ));
 
 named!(pub CallExpression<Input<InputWrapper>, node::Expression>, alt!(
+    CallExpression1 |
     NewExpressionCoverCallExpressionAndAsyncArrowHead
 ));
+
+fn CallExpression1(
+    tokens: Input<InputWrapper>,
+) -> IResult<Input<InputWrapper>, node::Expression> {
+    let member = NewExpressionCoverCallExpressionAndAsyncArrowHead(tokens)?;
+    let args = many1!(member.0, ArgumentList)?;
+    let mut res = node::CallExpression {
+            callee: box member.1,
+            arguments: args.1[0].clone(),
+        };
+    for i in 1..args.1.len() {
+        res = node::CallExpression {
+            callee: box node::Expression::CallExpression(res),
+            arguments: args.1[i].clone(),
+        };
+    }
+    Ok((
+        args.0,
+        node::Expression::CallExpression(res),
+    ))
+}
 
 fn NewExpressionCoverCallExpressionAndAsyncArrowHead(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, node::Expression> {
     let member = MemberExpression(tokens)?;
-    let left = is_token!(member.0, Token::LRound)?;
-    let args = ArgumentList(left.0)?;
-    let right = is_token!(args.0, Token::RRound)?;
+    let args = ArgumentList(member.0)?;
     Ok((
-        right.0,
+        args.0,
         node::Expression::CallExpression(node::CallExpression {
             callee: box member.1,
             arguments: args.1,
@@ -836,7 +856,10 @@ fn NewExpressionCoverCallExpressionAndAsyncArrowHead(
 fn ArgumentList(
     tokens: Input<InputWrapper>,
 ) -> IResult<Input<InputWrapper>, Vec<node::Expression>> {
-    separated_list!(tokens, is_token!(Token::Comma), AssignmentExpression)
+    let left = is_token!(tokens, Token::LRound)?;
+    let res = separated_list!(left.0, is_token!(Token::Comma), AssignmentExpression)?;
+    let right = is_token!(res.0, Token::RRound)?;
+    Ok((right.0, res.1))
 }
 
 named!(pub NewExpression<Input<InputWrapper>, node::Expression>, alt!(

@@ -5,7 +5,7 @@ use crate::{
     value::{Completion, ValueData},
     Interpreter,
 };
-use gc::Gc;
+use gc::{Gc, GcCell};
 use std::ops::Deref;
 
 pub fn call_expression(node: &CallExpression, scope: &mut Scope) -> Completion {
@@ -18,35 +18,24 @@ pub fn call_expression(node: &CallExpression, scope: &mut Scope) -> Completion {
                 .unwrap()
         })
         .collect();
-    if let node::Expression::MemberExpression(mem) = &*node.callee {
-        let object = member_expression(&mem, scope).value.unwrap();
-        // get key
-        let key = if mem.computed {
-            panic!("Computed not supported")
-        } else {
-            &mem.property.name
-        };
 
-        let dat = object.get_prop(&key.to_string());
-        if let ValueData::Function(func) = &*dat.unwrap().value {
-            if let Function::NativeFunc(nat) = &*func.borrow() {
-                return Completion::normal(
-                    (nat.data)(
-                        Gc::new(ValueData::Undefined),
-                        Gc::new(ValueData::Undefined),
-                        args,
-                    )
-                    .deref()
-                    .clone(),
-                );
+    let func = Interpreter::run_node(&(*node.callee).clone().into(), scope)
+        .value
+        .unwrap();
+
+    // Build identifier for error reporting
+    fn get_identifier(node: &node::Expression) -> String {
+        if let node::Expression::MemberExpression(mem) = node {
+            if let node::Expression::Identifier(ident) = &*mem.object {
+                return format!("{}.{}", ident.name, mem.property.name);
             }
         }
-    } else {
-        let func = Interpreter::run_node(&(*node.callee).clone().into(), scope)
-            .value
-            .unwrap();
-        if let ValueData::Function(func) = &*func {
-            if let Function::RegularFunc(func) = &mut *func.borrow_mut() {
+        panic!("Unexpected error when building error message");
+    }
+
+    match &*func {
+        ValueData::Function(func) => match &mut *func.borrow_mut() {
+            Function::RegularFunc(func) => {
                 for i in 0..func.params.len() {
                     let arg = Interpreter::run_node(
                         &node.arguments.get(i).unwrap().clone().into(),
@@ -54,17 +43,40 @@ pub fn call_expression(node: &CallExpression, scope: &mut Scope) -> Completion {
                     )
                     .value
                     .unwrap();
+                    println!("{:?} {:?}", arg, func.params.get(i).unwrap().clone());
                     func.scope.var(func.params.get(i).unwrap().clone(), arg);
                 }
-                return Interpreter::run_node(&func.expr.0.clone().into(), &mut func.scope);
+                Interpreter::run_node(&func.expr.0.clone().into(), &mut func.scope)
             }
-        }
+            Function::NativeFunc(nat) => Completion::normal(
+                (nat.data)(
+                    Gc::new(ValueData::Undefined),
+                    Gc::new(ValueData::Undefined),
+                    args,
+                )
+                .deref()
+                .clone(),
+            ),
+        },
+        _ => evaluation_error!("`{}` is not callable", get_identifier(&*node.callee)),
     }
-    unreachable!()
 }
 
 pub fn member_expression(node: &node::MemberExpression, scope: &mut Scope) -> Completion {
-    Interpreter::run_node(&(*node.object).clone().into(), scope)
+    let obj = Interpreter::run_node(&(*node.object).clone().into(), scope);
+    let key = if node.computed {
+        unimplemented!("Computed not supported")
+    } else {
+        &node.property.name
+    };
+    Completion::normal_gc(
+        obj.value
+            .unwrap()
+            .get_prop(&key.to_string())
+            .unwrap()
+            .value
+            .clone(),
+    )
 }
 
 pub fn object_expression(node: &node::ObjectExpression, scope: &mut Scope) -> Completion {
@@ -74,14 +86,14 @@ pub fn object_expression(node: &node::ObjectExpression, scope: &mut Scope) -> Co
             let key = if let node::Expression::Identifier(ident) = &prop.key {
                 &ident.name
             } else {
-                panic!("Only Identifier key is supported")
+                unimplemented!("Only Identifier key is supported")
             };
             let value = Interpreter::run_node(&prop.value.clone().into(), scope)
                 .value
                 .unwrap();
             obj.set_field(&key.to_string(), &value);
         } else {
-            panic!("Unsupported object property")
+            unimplemented!("Unsupported object property")
         }
     }
     Completion::normal(obj)
@@ -98,7 +110,7 @@ pub fn array_expression(node: &node::ArrayExpression, scope: &mut Scope) -> Comp
             obj.set_field(&i.to_string(), &value);
             i += 1;
         } else {
-            panic!("Unsupported array property")
+            unimplemented!("Unsupported array property")
         }
     }
     Completion::normal(obj)
@@ -109,7 +121,7 @@ pub fn assignment(node: &node::AssignmentExpression, scope: &mut Scope) -> Compl
     let key = if let node::Pattern::Identifier(ident) = &*node.left {
         &ident.name
     } else {
-        panic!("Only identifier assignemnt is supported")
+        unimplemented!("Only identifier assignemnt is supported")
     };
     let val = Interpreter::run_node(&(*node.right).clone().into(), scope)
         .value
@@ -156,7 +168,10 @@ pub fn binary(node: &node::BinaryExpression, scope: &mut Scope) -> Completion {
         BinaryOperator::More => {
             Completion::normal(ValueData::Boolean(left.deref() > right.deref()))
         }
-        _ => panic!("Unsuported operator"),
+        BinaryOperator::Plus => {
+            Completion::normal(left.deref().clone() + right.deref().clone())
+        }
+        a @ _ => unimplemented!("Unsuported binary operator `{:?}`", a),
     }
 }
 
@@ -177,7 +192,7 @@ pub fn unary(node: &node::UnaryExpression, scope: &mut Scope) -> Completion {
                 panic!("NaN");
             }
         }
-        _ => panic!("Unsuported operator"),
+        _ => unimplemented!("Unsuported unary operator"),
     }
 }
 
@@ -196,7 +211,47 @@ pub fn logical(node: &node::LogicalExpression, scope: &mut Scope) -> Completion 
         Or => Completion::normal(ValueData::Boolean(
             left.deref().into() || right.deref().into(),
         )),
+        _ => unimplemented!("Unsuported operator"),
+    }
+}
 
-        _ => panic!("Unsuported operator"),
+pub fn function(node: &node::FunctionExpression, scope: &mut Scope) -> Completion {
+    use crate::function::{Expr, Function, RegularFunction};
+    let inner_scope = Scope::new(Some(scope as *mut Scope), true);
+    let mut params = vec![];
+    for param in &node.params {
+        if let node::Pattern::Identifier(ident) = param {
+            params.push(ident.name.to_string())
+        }
+    }
+    let fun = RegularFunction {
+        scope: inner_scope,
+        expr: Expr(node::Node::FunctionBody(node.body.clone())),
+        params,
+    };
+    Completion::normal(ValueData::Function(GcCell::new(Function::RegularFunc(fun))))
+}
+
+pub fn arrow_function(node: &node::ArrowFunctionExpression, scope: &mut Scope) -> Completion {
+    use crate::function::{Expr, Function, RegularFunction};
+    let inner_scope = Scope::new(Some(scope as *mut Scope), true);
+    let mut params = vec![];
+    for param in &node.params {
+        if let node::Pattern::Identifier(ident) = param {
+            params.push(ident.name.to_string())
+        }
+    }
+    let fun = RegularFunction {
+        scope: inner_scope,
+        expr: Expr(node::Node::ArrowFunctionExpressionBody(node.body.clone())),
+        params,
+    };
+    Completion::normal(ValueData::Function(GcCell::new(Function::RegularFunc(fun))))
+}
+
+pub fn arrow_function_body(node: &node::ArrowFunctionExpressionBody, scope: &mut Scope) -> Completion {
+    match node {
+        node::ArrowFunctionExpressionBody::FunctionBody(fun) => Interpreter::run_node(&node::Node::FunctionBody(fun.clone()), scope),
+        node::ArrowFunctionExpressionBody::Expression(expr) => Interpreter::run_node(&expr.deref().clone().into(), scope),
     }
 }
