@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["IBytes","Interned byte string type"],["ICStr",""],["IStr","Interned string type"]]});

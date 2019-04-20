@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["error","Defines error handling"],["internship","Module for efficient string representation"],["token","Defines tokens"]],"struct":[["Lexer","Lexer implmementation"]]});

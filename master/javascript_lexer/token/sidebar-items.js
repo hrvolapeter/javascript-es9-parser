@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Token","Token that is results of consuming characters"]],"struct":[["Number","Number representation of parsed number"]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["lexer","Lexer module consumes text input and produces linear stream of tokens."],["parser","This module creates AST from stream of tokens. Constructed AST implements ESTree standart."]]});
+initSidebarItems({"mod":[["estree",""],["node","This file contains definition of AST structures. Structures are grouped to enums by their semantic value. Most important enums are: Expression, Statement, Node, Literal, Declaration. Same node can be contained in multiple enums."],["static_semantics",""]],"struct":[["Parser",""]]});
