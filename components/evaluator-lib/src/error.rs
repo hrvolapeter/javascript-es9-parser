@@ -4,10 +4,10 @@ macro_rules! evaluation_error {
     });
     ($msg:expr) => ({
         eprintln!($msg);
-        ::std::process::exit(0x1);
+        panic!();
     });
     ($fmt:expr, $($arg:tt)+) => ({
         eprintln!($fmt, $($arg)+);
-        ::std::process::exit(0x1);
+        panic!();
     });
 }

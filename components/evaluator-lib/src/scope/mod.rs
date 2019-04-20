@@ -1,17 +1,18 @@
-mod var;
+pub mod var;
 
-use crate::value::Value;
-use std::collections::HashMap;
+use crate::value::ValueData;
+use gc::{Gc, GcCell};
+use std::{cell::Cell, collections::HashMap, ops::Deref};
 
 type VarMap = HashMap<String, var::Var>;
+pub type ScopeWrapper = Gc<GcCell<Scope>>;
 
 #[derive(Trace, Finalize, Debug, Clone)]
 /// Defines scope that can hold variables
 /// There is a special Global scope which is top parent
 pub struct Scope {
     /// Parent to previous scope
-    #[unsafe_ignore_trace]
-    parent: Option<*mut Scope>,
+    parent: Option<ScopeWrapper>,
     /// To distinguish function scope (true) and block scope (false)
     isolated: bool,
     /// Holds values with name
@@ -19,7 +20,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(parent: Option<*mut Scope>, isolated: bool) -> Self {
+    pub fn new(parent: Option<ScopeWrapper>, isolated: bool) -> Self {
         Self {
             parent,
             isolated,
@@ -29,41 +30,45 @@ impl Scope {
 
     /// Find variable in scope chain
     /// If variable not found try window object
-    pub fn find(&mut self, name: &String) -> &mut var::Var {
-        if let Some(var) = self.context.get_mut(name) {
-            var
-        } else if let Some(parent) = self.parent {
-            unsafe { &mut *parent }.find(name)
+    pub fn find(&mut self, name: &String) -> var::Var {
+        if let Some(var) = self.context.get(name) {
+            var.clone()
+        } else if let Some(parent) = &self.parent {
+            parent.deref().borrow_mut().find(name)
         } else {
             evaluation_error!("Reference error: `{}` is not defined", name);
-            let mut scope = self;
-            while let Some(parent) = scope.parent {
-                scope = unsafe { &mut *parent };
-            }
-            let win = scope.find(&String::from("window"));
-            let res = win.get().get_field(&name);
+            // let mut scope = self;
+            // while let Some(parent) = scope.parent {
+            //     scope = unsafe { &mut *parent };
+            // }
+            // let win = scope.find(&String::from("window"));
+            // let res = win.get().get_field(&name);
             // var::Var::new(var::VarKind::Var, res.clone())
         }
     }
 
     /// Define var variable in the nearest scope
     /// If defined in global scope add variable to window object
-    pub fn var(&mut self, name: String, val: Value) -> bool {
-        let mut scope = self;
-
-        // Find the closest function scope
-        while scope.parent.is_some() && !scope.isolated {
-            scope = unsafe { &mut *scope.parent.unwrap() };
+    pub fn var(&mut self, name: String, val: ValueData) -> bool {
+        if !self.isolated && self.parent.is_some() {
+            return self
+                .parent
+                .as_ref()
+                .unwrap()
+                .deref()
+                .borrow_mut()
+                .var(name, val);
         }
 
-        scope
-            .context
+        self.context
             .insert(name.clone(), var::Var::new(var::VarKind::Var, val.clone()));
 
-        if scope.parent.is_none() {
-            let win = scope.find(&String::from("window"));
+        if self.parent.is_none() {
+            let win = self.find(&String::from("window"));
             if name != "window" {
-                win.get().set_field(&name, &val);
+                win.get()
+                    .borrow_mut()
+                    .set_field(&name, &Gc::new(GcCell::new(val)));
             }
         }
 
@@ -72,7 +77,7 @@ impl Scope {
 
     /// Define let variable in the current scope
     /// Return false if variable with the name exists
-    pub fn _let(&mut self, name: String, val: Value) -> bool {
+    pub fn _let(&mut self, name: String, val: ValueData) -> bool {
         let variable = self.context.get(&name);
         if let Some(_) = variable {
             false
@@ -85,7 +90,7 @@ impl Scope {
 
     /// Define const variable in the current scope
     /// Return false if variable with the name exists
-    pub fn _const(&mut self, name: String, val: Value) -> bool {
+    pub fn _const(&mut self, name: String, val: ValueData) -> bool {
         let variable = self.context.get(&name);
         if let Some(_) = variable {
             false

@@ -17,9 +17,9 @@ mod statement;
 mod value;
 
 use crate::value::{Completion, CompletionType, ValueData};
-use gc::Gc;
+use gc::{Gc, GcCell};
 use js_parser::node;
-use scope::Scope;
+use scope::{Scope, ScopeWrapper};
 use std::ops::Deref;
 
 /// An execution engine
@@ -33,34 +33,40 @@ pub trait Executor {
 /// A Javascript intepreter
 #[derive(Debug)]
 pub struct Interpreter {
-    scope: Scope,
+    scope: ScopeWrapper,
 }
 
 impl Interpreter {
-    fn run_node(node: &node::Node, scope: &mut Scope) -> Completion {
+    fn run_node(node: &node::Node, scope: ScopeWrapper) -> Completion {
         match node {
             node::Node::NumberLiteral(num) => Completion::normal(ValueData::Number(num.0.into())),
             node::Node::StringLiteral(s) => Completion::normal(s.into()),
             node::Node::BooleanLiteral(b) => Completion::normal(b.into()),
             node::Node::NullLiteral(_) => Completion::normal(ValueData::Null),
+            node::Node::UndefinedLiteral(_) => Completion::normal(ValueData::Undefined),
             node::Node::ExpressionStatement(stmt) => {
                 Self::run_node(&stmt.expression.as_ref().clone().into(), scope)
             }
             node::Node::VariableDeclaration(decl) => declaration::variable(decl, scope),
             node::Node::CallExpression(expr) => expression::call_expression(expr, scope),
             node::Node::MemberExpression(expr) => expression::member_expression(expr, scope),
-            node::Node::Identifier(ident) => {
-                // Hack because lexer is not recognizing undefined as a keyword
-                if ident.name == "undefined" {
-                    return Completion::normal(ValueData::Undefined);
-                }
-                Completion::normal(scope.find(&ident.name.to_string()).get().deref().clone())
-            }
+            node::Node::Identifier(ident) => Completion::normal(
+                scope
+                    .deref()
+                    .borrow_mut()
+                    .find(&ident.name.to_string())
+                    .get()
+                    .deref()
+                    .borrow_mut()
+                    .clone(),
+            ),
             node::Node::ObjectExpression(expr) => expression::object_expression(expr, scope),
             node::Node::ArrayExpression(expr) => expression::array_expression(expr, scope),
             node::Node::FunctionExpression(expr) => expression::function(expr, scope),
             node::Node::ArrowFunctionExpression(expr) => expression::arrow_function(expr, scope),
-            node::Node::ArrowFunctionExpressionBody(expr) => expression::arrow_function_body(expr, scope),
+            node::Node::ArrowFunctionExpressionBody(expr) => {
+                expression::arrow_function_body(expr, scope)
+            }
             node::Node::AssignmentExpression(expr) => expression::assignment(expr, scope),
             node::Node::FunctionDeclaration(decl) => declaration::function(decl, scope),
             node::Node::ReturnStatement(stmt) => {
@@ -71,7 +77,7 @@ impl Interpreter {
             }
             node::Node::FunctionBody(decl) => {
                 for node::FunctionBodyEnum::Statement(stmt) in &decl.body {
-                    let res = Self::run_node(&stmt.clone().into(), scope);
+                    let res = Self::run_node(&stmt.clone().into(), scope.clone());
                     if res.ty != CompletionType::Normal {
                         return res;
                     }
@@ -93,17 +99,19 @@ impl Interpreter {
 impl Executor for Interpreter {
     fn new() -> Self {
         let mut scope = Scope::new(None, false);
-        let window = Gc::new(ValueData::Object(Default::default()));
+        let window = ValueData::Object(Default::default());
         scope.var(String::from("window"), window.clone());
         scope._let(String::from("this"), window.clone());
         scope.var(String::from("console"), console::init());
-        Interpreter { scope }
+        Interpreter {
+            scope: Gc::new(GcCell::new(scope)),
+        }
     }
 
     fn run(&mut self, program: &node::Program) {
         for body in &program.body {
             if let node::ProgramBody::ProgramStatement(stmt) = body {
-                Self::run_node(&stmt.clone().into(), &mut self.scope);
+                Self::run_node(&stmt.clone().into(), self.scope.clone());
             }
         }
     }

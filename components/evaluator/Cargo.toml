@@ -9,4 +9,4 @@ js_evaluator = { path = "../evaluator-lib" }
 js_parser = { path = "../parser" }
 
 [dev-dependencies]
-compiletest_rs = "0.3.19"
+compiletest_rs = {version = "0.3.19", features = ["norustc"] }

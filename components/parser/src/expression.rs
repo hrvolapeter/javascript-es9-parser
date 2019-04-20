@@ -818,25 +818,20 @@ named!(pub CallExpression<Input<InputWrapper>, node::Expression>, alt!(
     NewExpressionCoverCallExpressionAndAsyncArrowHead
 ));
 
-fn CallExpression1(
-    tokens: Input<InputWrapper>,
-) -> IResult<Input<InputWrapper>, node::Expression> {
+fn CallExpression1(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
     let member = NewExpressionCoverCallExpressionAndAsyncArrowHead(tokens)?;
     let args = many1!(member.0, ArgumentList)?;
     let mut res = node::CallExpression {
-            callee: box member.1,
-            arguments: args.1[0].clone(),
-        };
+        callee: box member.1,
+        arguments: args.1[0].clone(),
+    };
     for i in 1..args.1.len() {
         res = node::CallExpression {
             callee: box node::Expression::CallExpression(res),
             arguments: args.1[i].clone(),
         };
     }
-    Ok((
-        args.0,
-        node::Expression::CallExpression(res),
-    ))
+    Ok((args.0, node::Expression::CallExpression(res)))
 }
 
 fn NewExpressionCoverCallExpressionAndAsyncArrowHead(
@@ -1113,7 +1108,8 @@ named!(pub Literal<Input<InputWrapper>, node::Expression>, alt!(
     NullLiteral |
     BooleanLiteral |
     NumericLiteral |
-    StringLiteral
+    StringLiteral |
+    UndefinedLiteral
 ));
 
 named!(pub LiteralPropertyName<Input<InputWrapper>, node::Expression>, alt!(
@@ -1170,6 +1166,20 @@ fn NullLiteral(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node
         return Ok((
             identifier.0,
             node::Expression::NullLiteral(node::NullLiteral),
+        ));
+    }
+    Err(Err::Error(error_position!(
+        identifier.0,
+        ErrorKind::Custom(1)
+    )))
+}
+
+fn UndefinedLiteral(tokens: Input<InputWrapper>) -> IResult<Input<InputWrapper>, node::Expression> {
+    let identifier = take!(tokens, 1)?;
+    if let Token::LUndefined = &(*identifier.1.inner)[0] {
+        return Ok((
+            identifier.0,
+            node::Expression::UndefinedLiteral(node::UndefinedLiteral),
         ));
     }
     Err(Err::Error(error_position!(

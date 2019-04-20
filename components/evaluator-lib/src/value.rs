@@ -19,7 +19,7 @@ impl Completion {
     pub fn normal(value: ValueData) -> Self {
         Self {
             ty: CompletionType::Normal,
-            value: Some(Gc::new(value)),
+            value: Some(Gc::new(GcCell::new(value))),
             target: None,
         }
     }
@@ -43,7 +43,7 @@ impl Completion {
     pub fn return_empty() -> Self {
         Self {
             ty: CompletionType::Return,
-            value: Some(Gc::new(ValueData::Undefined)),
+            value: Some(Gc::new(GcCell::new(ValueData::Undefined))),
             target: None,
         }
     }
@@ -58,7 +58,7 @@ impl Completion {
     pub fn empty(value: ValueData) -> Self {
         Self {
             ty: CompletionType::Return,
-            value: Some(Gc::new(value)),
+            value: Some(Gc::new(GcCell::new(value))),
             target: None,
         }
     }
@@ -74,7 +74,7 @@ pub enum CompletionType {
 }
 
 /// A Garbage-collected Javascript value as represented in the interpreter
-pub type Value = Gc<ValueData>;
+pub type Value = Gc<GcCell<ValueData>>;
 
 /// A Javascript value
 #[derive(Trace, Finalize, Debug, Clone)]

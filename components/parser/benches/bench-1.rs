@@ -6,11 +6,12 @@ extern crate test;
 use self::test::Bencher;
 
 use js_parser::{
-    lexer::{
+    estree,
+    javascript_lexer::{
         token::{Number, Token},
         Lexer,
     },
-    parser::{estree, Parser},
+    Parser,
 };
 
 static JS: &str = r#"

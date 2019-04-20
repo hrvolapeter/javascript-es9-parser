@@ -11,7 +11,7 @@ type-info = "0.2.1"
 type-info-derive = "0.2.0"
 mopa = "0.2.2"
 include_dir = "0.2.1"
-javascript_lexer = "0.1.5"
+javascript_lexer = "0.1.6"
 
 [dev-dependencies]
 pretty_assertions = "0.5.1"

@@ -1,4 +1,4 @@
-use crate::{object::ObjectData, scope::Scope, value::Value};
+use crate::{object::ObjectData, scope::ScopeWrapper, value::Value};
 use gc::{Finalize, Trace};
 use js_parser::node;
 use std::fmt;
@@ -36,7 +36,7 @@ impl Finalize for Expr {}
 #[derive(Trace, Finalize, Debug, Clone)]
 pub struct RegularFunction {
     /// The fields associated with the function
-    pub scope: Scope,
+    pub scope: ScopeWrapper,
     /// This function's expression
     pub expr: Expr,
     /// Name of params for function

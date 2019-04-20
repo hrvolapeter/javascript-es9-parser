@@ -1,26 +1,27 @@
 use crate::{
     function::{Function, NativeFunction},
+    scope::var::Var,
     value::{Value, ValueData},
 };
 use gc::{Gc, GcCell};
 use std::io::{self, BufRead};
 
 // Initialize console object with native functions
-pub fn init() -> Value {
+pub fn init() -> ValueData {
     let console = ValueData::Object(Default::default());
     console.set_field(
         &String::from("log"),
-        &Gc::new(ValueData::Function(GcCell::new(Function::NativeFunc(
-            NativeFunction::new(log),
+        &Gc::new(GcCell::new(ValueData::Function(GcCell::new(
+            Function::NativeFunc(NativeFunction::new(log)),
         )))),
     );
     console.set_field(
         &String::from("readline"),
-        &Gc::new(ValueData::Function(GcCell::new(Function::NativeFunc(
-            NativeFunction::new(readline),
+        &Gc::new(GcCell::new(ValueData::Function(GcCell::new(
+            Function::NativeFunc(NativeFunction::new(readline)),
         )))),
     );
-    Gc::new(console)
+    console
 }
 
 /// Add console.log(...) function that prints directly to std
@@ -32,10 +33,10 @@ pub fn log(_: Value, _: Value, args: Vec<Value>) -> Value {
             print!(" ");
         }
         first = false;
-        print!("{}", a);
+        print!("{}", *a.borrow_mut());
     }
     print!("\n");
-    Gc::new(ValueData::Undefined)
+    Gc::new(GcCell::new(ValueData::Undefined))
 }
 
 /// Add console.readline() function to read one line from std
@@ -44,5 +45,5 @@ pub fn readline(_: Value, _: Value, _: Vec<Value>) -> Value {
     let mut line = String::new();
     let stdin = io::stdin();
     stdin.lock().read_line(&mut line).unwrap();
-    Gc::new(ValueData::String(format!("{:?}", line)))
+    Gc::new(GcCell::new(ValueData::String(format!("{:?}", line))))
 }

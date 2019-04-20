@@ -1,4 +1,6 @@
-use crate::value::Value;
+use crate::value::{Value, ValueData};
+use gc::{Gc, GcCell};
+use std::ops::Deref;
 
 #[derive(PartialEq, Clone, Trace, Finalize, Debug)]
 pub enum VarKind {
@@ -14,18 +16,21 @@ pub struct Var {
 }
 
 impl Var {
-    pub fn new(kind: VarKind, value: Value) -> Self {
-        Self { kind, value }
+    pub fn new(kind: VarKind, value: ValueData) -> Self {
+        Self {
+            kind,
+            value: Gc::new(GcCell::new(value)),
+        }
     }
 
     pub fn get(&self) -> Value {
         self.value.clone()
     }
 
-    pub fn set(&mut self, value: Value) {
+    pub fn set(&self, value: ValueData) {
         if self.kind == VarKind::Const {
             evaluation_error!("Assignment to constant variable {:?}", value);
         }
-        self.value = value;
+        *self.value.deref().borrow_mut() = value;
     }
 }

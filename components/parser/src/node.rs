@@ -12,6 +12,7 @@ pub enum Expression {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
     NullLiteral(NullLiteral),
+    UndefinedLiteral(UndefinedLiteral),
     NumberLiteral(NumberLiteral),
     Regex(Regex),
     Identifier(Identifier),
@@ -39,6 +40,7 @@ impl Into<Node> for Expression {
             Expression::StringLiteral(expr) => Node::StringLiteral(expr),
             Expression::BooleanLiteral(expr) => Node::BooleanLiteral(expr),
             Expression::NullLiteral(expr) => Node::NullLiteral(expr),
+            Expression::UndefinedLiteral(expr) => Node::UndefinedLiteral(expr),
             Expression::NumberLiteral(expr) => Node::NumberLiteral(expr),
             Expression::Regex(expr) => Node::Regex(expr),
             Expression::Identifier(expr) => Node::Identifier(expr),
@@ -69,6 +71,7 @@ pub enum Node {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
     NullLiteral(NullLiteral),
+    UndefinedLiteral(UndefinedLiteral),
     NumberLiteral(NumberLiteral),
     Regex(Regex),
     VariableDeclarator(VariableDeclarator),
@@ -130,6 +133,7 @@ pub enum Literal {
     StringLiteral(StringLiteral),
     BooleanLiteral(BooleanLiteral),
     NullLiteral(NullLiteral),
+    UndefinedLiteral(UndefinedLiteral),
     NumberLiteral(NumberLiteral),
     Regex(Regex),
 }
@@ -284,6 +288,12 @@ pub struct NullLiteral;
 impl estree::Literal for NullLiteral {}
 impl estree::Node for NullLiteral {}
 impl estree::Expression for NullLiteral {}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct UndefinedLiteral;
+impl estree::Literal for UndefinedLiteral {}
+impl estree::Node for UndefinedLiteral {}
+impl estree::Expression for UndefinedLiteral {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NumberLiteral(pub Number);

@@ -75,6 +75,7 @@ impl StaticSemantics for node::Expression {
             node::Expression::StringLiteral(expr) => expr.check_semantics()?,
             node::Expression::BooleanLiteral(expr) => expr.check_semantics()?,
             node::Expression::NullLiteral(expr) => expr.check_semantics()?,
+            node::Expression::UndefinedLiteral(expr) => expr.check_semantics()?,
             node::Expression::NumberLiteral(expr) => expr.check_semantics()?,
             node::Expression::Regex(expr) => expr.check_semantics()?,
             node::Expression::Identifier(expr) => expr.check_semantics()?,
@@ -119,6 +120,7 @@ empty_semantics!(node::AssignmentPattern);
 empty_semantics!(node::StringLiteral);
 empty_semantics!(node::BooleanLiteral);
 empty_semantics!(node::NullLiteral);
+empty_semantics!(node::UndefinedLiteral);
 empty_semantics!(node::NumberLiteral);
 empty_semantics!(node::Regex);
 empty_semantics!(node::Identifier);
