@@ -79,23 +79,12 @@ pub type Value = Gc<GcCell<ValueData>>;
 /// A Javascript value
 #[derive(Trace, Finalize, Debug, Clone)]
 pub enum ValueData {
-    /// `null` - A null value, for when a value doesn't exist
     Null,
-    /// `undefined` - An undefined value, for when a field or index doesn't
-    /// exist
     Undefined,
-    /// `boolean` - A `true` / `false` value, for if a certain criteria is met
     Boolean(bool),
-    /// `String` - A UTF-8 string, such as `"Hello, world"`
     String(String),
-    /// `Number` - A 64-bit floating point number, such as `3.1415`
     Number(Number),
-    // `Object` - An object, such as `Math`, represented by a binary tree of string keys to
-    // Javascript values Some Objects will need an internal slot to hold private values, so
-    // our second ObjectData is for that The second object storage is optional for now
     Object(GcCell<ObjectData>),
-    // A runnable block of code, such as `Math.sqrt`, which can take some variables and return a
-    // useful value or act upon an object
     Function(GcCell<Function>),
 }
 
@@ -173,10 +162,11 @@ impl Add for Number {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
+        assert_eq!(self.exponent, other.exponent); // Nope
         Number {
             integer: self.integer + other.integer,
             decimal: self.decimal + other.decimal,
-            exponent: self.exponent, // Nope
+            exponent: self.exponent,
             base: self.base,
         }
     }
@@ -186,10 +176,11 @@ impl Sub for Number {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
+        assert_eq!(self.exponent, other.exponent); // Nope
         Number {
             integer: self.integer - other.integer,
             decimal: self.decimal - other.decimal,
-            exponent: self.exponent, // Nope
+            exponent: self.exponent,
             base: self.base,
         }
     }

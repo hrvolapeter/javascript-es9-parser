@@ -23,6 +23,10 @@ impl Var {
         }
     }
 
+    pub fn new_value(kind: VarKind, value: Value) -> Self {
+        Self { kind, value }
+    }
+
     pub fn get(&self) -> Value {
         self.value.clone()
     }

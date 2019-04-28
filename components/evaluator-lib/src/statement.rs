@@ -26,7 +26,7 @@ pub fn _if(node: &node::IfStatement, scope: ScopeWrapper) -> Completion {
 
 // 13.2.13 https://tc39.github.io/ecma262/#prod-BlockStatement
 pub fn block(node: &node::BlockStatement, scope: ScopeWrapper) -> Completion {
-    let mut inner_scope = Gc::new(GcCell::new(Scope::new(Some(scope.clone()), false)));
+    let inner_scope = Gc::new(GcCell::new(Scope::new(Some(scope.clone()), false)));
     let mut last = ValueData::Undefined;
     for stmt in &node.body {
         let res = Interpreter::run_node(&stmt.clone().into(), inner_scope.clone());
@@ -109,4 +109,15 @@ pub fn _for(node: &node::ForStatement, scope: ScopeWrapper) -> Completion {
         }
     }
     Completion::normal(last)
+}
+
+pub fn expression(node: &node::ExpressionStatement, scope: ScopeWrapper) -> Completion {
+    Interpreter::run_node(&node.expression.as_ref().clone().into(), scope)
+}
+
+pub fn _return(node: &node::ReturnStatement, scope: ScopeWrapper) -> Completion {
+    if node.argument.is_none() {
+        return Completion::return_empty();
+    }
+    Interpreter::run_node(&node.argument.as_ref().unwrap().clone().into(), scope).returned()
 }

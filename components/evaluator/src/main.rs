@@ -1,7 +1,7 @@
 extern crate js_evaluator;
 extern crate js_parser;
 
-use js_evaluator::{Executor, Interpreter};
+use js_evaluator::Interpreter;
 use js_parser::{estree::ProgramSourceType, javascript_lexer::Lexer, Parser};
 use std::{env, fs::File, io::prelude::Read};
 

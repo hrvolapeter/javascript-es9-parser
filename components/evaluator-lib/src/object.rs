@@ -21,19 +21,12 @@ impl Property {
 }
 impl ValueData {
     pub fn set_field(&self, field: &String, val: &Value) {
-        match *self {
-            ValueData::Object(ref obj) => {
+        match self {
+            ValueData::Object(obj) => {
                 obj.borrow_mut()
                     .insert(field.clone(), Property::new(val.clone()));
             }
             _ => (),
-        }
-    }
-
-    pub fn get_field(&self, field: &String) -> Value {
-        match self.get_prop(field) {
-            Some(prop) => prop.value.clone(),
-            None => unimplemented!(),
         }
     }
 
@@ -43,9 +36,6 @@ impl ValueData {
             _ => return None,
         };
 
-        match obj.get(field) {
-            Some(val) => Some(val.clone()),
-            None => unimplemented!(),
-        }
+        obj.get(field).map(|f| f.clone())
     }
 }

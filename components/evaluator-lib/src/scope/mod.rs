@@ -2,7 +2,7 @@ pub mod var;
 
 use crate::value::ValueData;
 use gc::{Gc, GcCell};
-use std::{cell::Cell, collections::HashMap, ops::Deref};
+use std::{collections::HashMap, ops::Deref};
 
 type VarMap = HashMap<String, var::Var>;
 pub type ScopeWrapper = Gc<GcCell<Scope>>;
@@ -29,21 +29,22 @@ impl Scope {
     }
 
     /// Find variable in scope chain
-    /// If variable not found try window object
+    /// 1. local scope
+    /// 2. parent scope
+    /// 3. window object
+    /// If not found evaluation error
     pub fn find(&mut self, name: &String) -> var::Var {
         if let Some(var) = self.context.get(name) {
             var.clone()
         } else if let Some(parent) = &self.parent {
             parent.deref().borrow_mut().find(name)
         } else {
-            evaluation_error!("Reference error: `{}` is not defined", name);
-            // let mut scope = self;
-            // while let Some(parent) = scope.parent {
-            //     scope = unsafe { &mut *parent };
-            // }
-            // let win = scope.find(&String::from("window"));
-            // let res = win.get().get_field(&name);
-            // var::Var::new(var::VarKind::Var, res.clone())
+            let win = self.context.get(&String::from("window")).unwrap();
+            if let Some(res) = win.get().borrow_mut().get_prop(&name) {
+                var::Var::new_value(var::VarKind::Var, res.value.clone())
+            } else {
+                evaluation_error!("Reference error: `{}` is not defined", name);
+            }
         }
     }
 

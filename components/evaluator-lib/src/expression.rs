@@ -2,13 +2,13 @@ use crate::{
     function::Function,
     js_parser::node::{self, CallExpression},
     scope::{Scope, ScopeWrapper},
-    value::{Completion, ValueData},
+    value::{Completion, CompletionType, ValueData},
     Interpreter,
 };
 use gc::{Gc, GcCell};
 use std::ops::Deref;
 
-pub fn call_expression(node: &CallExpression, scope: ScopeWrapper) -> Completion {
+pub fn call(node: &CallExpression, scope: ScopeWrapper) -> Completion {
     let args: Vec<_> = node
         .arguments
         .iter()
@@ -54,25 +54,18 @@ pub fn call_expression(node: &CallExpression, scope: ScopeWrapper) -> Completion
                 }
                 Interpreter::run_node(&func.expr.0.clone().into(), func.scope.clone())
             }
-            Function::NativeFunc(nat) => Completion::normal(
-                (nat.data)(
-                    Gc::new(GcCell::new(ValueData::Undefined)),
-                    Gc::new(GcCell::new(ValueData::Undefined)),
-                    args,
-                )
-                .deref()
-                .borrow_mut()
-                .clone(),
-            ),
+            Function::NativeFunc(nat) => {
+                Completion::normal((nat)(args).deref().borrow_mut().clone())
+            }
         },
         _ => evaluation_error!("`{}` is not callable", get_identifier(&*node.callee)),
     }
 }
 
-pub fn member_expression(node: &node::MemberExpression, scope: ScopeWrapper) -> Completion {
+pub fn member(node: &node::MemberExpression, scope: ScopeWrapper) -> Completion {
     let obj = Interpreter::run_node(&(*node.object).clone().into(), scope);
     let key = if node.computed {
-        unimplemented!("Computed not supported")
+        unimplemented!("Computed member not supported")
     } else {
         &node.property.name
     };
@@ -87,7 +80,7 @@ pub fn member_expression(node: &node::MemberExpression, scope: ScopeWrapper) -> 
     )
 }
 
-pub fn object_expression(node: &node::ObjectExpression, scope: ScopeWrapper) -> Completion {
+pub fn object(node: &node::ObjectExpression, scope: ScopeWrapper) -> Completion {
     let obj = ValueData::Object(Default::default());
     for property in &node.properties {
         if let node::ObjectExpressionProperty::Property(prop) = property {
@@ -107,7 +100,7 @@ pub fn object_expression(node: &node::ObjectExpression, scope: ScopeWrapper) -> 
     Completion::normal(obj)
 }
 
-pub fn array_expression(node: &node::ArrayExpression, scope: ScopeWrapper) -> Completion {
+pub fn array(node: &node::ArrayExpression, scope: ScopeWrapper) -> Completion {
     let obj = ValueData::Object(Default::default());
     let mut i = 0;
     for element in &node.elements {
@@ -144,7 +137,7 @@ pub fn assignment(node: &node::AssignmentExpression, scope: ScopeWrapper) -> Com
         AssignmentOperator::PlusEqual => res + val,
         AssignmentOperator::MinusEqual => res - val,
         AssignmentOperator::Equal => val,
-        _ => unimplemented!(),
+        _ => unimplemented!("Unsupported assignment operator `{:?}`", node.operator),
     };
     var.set(res.clone());
     Completion::normal(res)
@@ -204,7 +197,7 @@ pub fn unary(node: &node::UnaryExpression, scope: ScopeWrapper) -> Completion {
                 panic!("NaN");
             }
         }
-        _ => unimplemented!("Unsuported unary operator"),
+        _ => unimplemented!("Unsuported unary operator `{:?}`", node.operator),
     }
 }
 
@@ -223,7 +216,7 @@ pub fn logical(node: &node::LogicalExpression, scope: ScopeWrapper) -> Completio
         Or => Completion::normal(ValueData::Boolean(
             left.deref().borrow_mut().deref().into() || right.deref().borrow_mut().deref().into(),
         )),
-        _ => unimplemented!("Unsuported operator"),
+        _ => unimplemented!("Unsuported logical operator `{:?}`", node.operator),
     }
 }
 
@@ -242,6 +235,16 @@ pub fn function(node: &node::FunctionExpression, scope: ScopeWrapper) -> Complet
         params,
     };
     Completion::normal(ValueData::Function(GcCell::new(Function::RegularFunc(fun))))
+}
+
+pub fn function_body(node: &node::FunctionBody, scope: ScopeWrapper) -> Completion {
+    for node::FunctionBodyEnum::Statement(stmt) in &node.body {
+        let res = Interpreter::run_node(&stmt.clone().into(), scope.clone());
+        if res.ty != CompletionType::Normal {
+            return res;
+        }
+    }
+    Completion::normal_empty()
 }
 
 pub fn arrow_function(node: &node::ArrowFunctionExpression, scope: ScopeWrapper) -> Completion {
