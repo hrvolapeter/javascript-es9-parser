@@ -234,6 +234,7 @@ successfully for any infinite iterators.</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table><tr class='module-item'><td><a class="struct" href="struct.Chain.html" title='nom::lib::std::iter::Chain struct'>Chain</a></td><td class='docblock-short'><p>An iterator that strings two iterators together.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Cloned.html" title='nom::lib::std::iter::Cloned struct'>Cloned</a></td><td class='docblock-short'><p>An iterator that clones the elements of an underlying iterator.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.Copied.html" title='nom::lib::std::iter::Copied struct'>Copied</a></td><td class='docblock-short'><p>An iterator that copies the elements of an underlying iterator.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Cycle.html" title='nom::lib::std::iter::Cycle struct'>Cycle</a></td><td class='docblock-short'><p>An iterator that repeats endlessly.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Empty.html" title='nom::lib::std::iter::Empty struct'>Empty</a></td><td class='docblock-short'><p>An iterator that yields nothing.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Enumerate.html" title='nom::lib::std::iter::Enumerate struct'>Enumerate</a></td><td class='docblock-short'><p>An iterator that yields the current count and the element during iteration.</p>
@@ -264,7 +265,6 @@ applying the provided closure <code>F: FnMut() -&gt; A</code>.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Take.html" title='nom::lib::std::iter::Take struct'>Take</a></td><td class='docblock-short'><p>An iterator that only iterates over the first <code>n</code> iterations of <code>iter</code>.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.TakeWhile.html" title='nom::lib::std::iter::TakeWhile struct'>TakeWhile</a></td><td class='docblock-short'><p>An iterator that only accepts elements while <code>predicate</code> returns <code>true</code>.</p>
 </td></tr><tr class='module-item'><td><a class="struct" href="struct.Zip.html" title='nom::lib::std::iter::Zip struct'>Zip</a></td><td class='docblock-short'><p>An iterator that iterates two other iterators simultaneously.</p>
-</td></tr><tr class='unstable module-item'><td><a class="struct" href="struct.Copied.html" title='nom::lib::std::iter::Copied struct'>Copied</a></td><td class='docblock-short'><span class="stab unstable">Experimental</span><p>An iterator that copies the elements of an underlying iterator.</p>
 </td></tr><tr class='unstable module-item'><td><a class="struct" href="struct.OnceWith.html" title='nom::lib::std::iter::OnceWith struct'>OnceWith</a></td><td class='docblock-short'><span class="stab unstable">Experimental</span><p>An iterator that yields a single element of type <code>A</code> by
 applying the provided closure <code>F: FnOnce() -&gt; A</code>.</p>
 </td></tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>

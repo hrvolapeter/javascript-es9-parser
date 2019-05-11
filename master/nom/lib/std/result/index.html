@@ -75,7 +75,7 @@ by the <a href="../../std/io/trait.Write.html"><code>Write</code></a> trait:</p>
     <span class="kw">fn</span> <span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">bytes</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">io</span>::<span class="ident">Error</span><span class="op">&gt;</span>;
 }</pre></div>
 <p><em>Note: The actual definition of <a href="../../std/io/trait.Write.html"><code>Write</code></a> uses <a href="../../std/io/type.Result.html"><code>io::Result</code></a>, which
-is just a synonym for <a href="enum.Result.html"><code>Result</code></a><code>&lt;T,</code><a href="../../std/io/struct.Error.html"><code>io::Error</code></a><code>&gt;</code>.</em></p>
+is just a synonym for <a href="enum.Result.html"><code>Result</code></a><code>&lt;T, </code><a href="../../std/io/struct.Error.html"><code>io::Error</code></a><code>&gt;</code>.</em></p>
 <p>This method doesn't produce a value, but the write may
 fail. It's crucial to handle the error case, and <em>not</em> write
 something like this:</p>
